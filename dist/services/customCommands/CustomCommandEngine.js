@@ -1,0 +1,42 @@
+import { TextChannel } from 'discord.js';
+import { prisma } from '../../database/prisma.js';
+import { CacheService } from '../cacheService.js';
+import { VariableParser } from '../../utils/variables.js';
+export class CustomCommandEngine {
+    static async handleMessage(message) {
+        if (!message.guild || message.author.bot || message.system)
+            return;
+        // We only process if it starts with the command prefix or it's a simple exact match text.
+        // For Custom Commands, the user expects exact match triggers or prefix triggers.
+        // Since Phase 1 said "no prefix infrastructure", we treat Custom Commands as exact match
+        // text triggers or slash commands. Wait, custom commands as slash commands requires dynamic 
+        // registering of Discord App Commands which is complex to scale.
+        // Usually "Custom commands" in traditional bots trigger via prefix or exact match text.
+        // Let's implement exact match or prefix fallback for custom commands.
+        // We will do a simple exact match for the trigger.
+        const text = message.content.trim().toLowerCase();
+        const cacheKey = `customcommands:${message.guild.id}`;
+        let commands = await CacheService.get(cacheKey);
+        if (!commands) {
+            commands = await prisma.customCommand.findMany({
+                where: { guildId: message.guild.id }
+            });
+            await CacheService.set(cacheKey, commands, 120); // Cache for 2 mins
+        }
+        if (commands.length === 0)
+            return;
+        const matchedCommand = commands.find(c => c.trigger.toLowerCase() === text);
+        if (!matchedCommand)
+            return;
+        const context = {
+            user: message.author,
+            member: message.member || undefined,
+            guild: message.guild,
+            channel: message.channel instanceof TextChannel ? message.channel : undefined
+        };
+        const responseText = VariableParser.parse(matchedCommand.response, context);
+        if (message.channel.isTextBased() && 'send' in message.channel) {
+            await message.channel.send(responseText).catch(() => null);
+        }
+    }
+}
