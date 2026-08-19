@@ -6,36 +6,29 @@ import { LoggingService, LogType } from '../loggingService.js';
 import { logger } from '../../utils/logger.js';
 
 export class RaidProtectionService {
-  /**
-   * Handles a member joining to determine if a raid is occurring.
-   * Returns the action taken on the user if any (e.g. 'KICK', 'BAN'), or null.
-   */
   static async handleJoin(member: GuildMember): Promise<string | null> {
     const guild = member.guild;
     const configKey = `raidconfig:${guild.id}`;
-    
+
     let config = await CacheService.get<any>(configKey);
     if (!config) {
       config = await prisma.raidProtection.findUnique({ where: { guildId: guild.id } });
       if (!config) return null;
-      await CacheService.set(configKey, config, 300); // cache for 5 mins
+      await CacheService.set(configKey, config, 300);
     }
 
     if (!config.enabled) return null;
 
     const joinKey = `raidjoins:${guild.id}`;
-    // Track joins by pushing the current timestamp
+
     const joins = await CacheService.pushToArray<number>(joinKey, Date.now(), config.timeWindow);
-    
-    // Filter out joins older than the time window
+
     const now = Date.now();
-    const recentJoins = joins.filter(time => now - time <= config.timeWindow * 1000);
-    
-    // Update the cache with only recent joins
+    const recentJoins = joins.filter((time) => now - time <= config.timeWindow * 1000);
+
     await CacheService.set(joinKey, recentJoins, config.timeWindow);
 
     if (recentJoins.length >= config.joinThreshold) {
-      // Raid detected!
       return await this.executeRaidAction(member, config);
     }
 
@@ -45,21 +38,24 @@ export class RaidProtectionService {
   private static async executeRaidAction(member: GuildMember, config: any): Promise<string | null> {
     const guild = member.guild;
     const reason = `Automated Raid Protection: Triggered by ${config.joinThreshold} joins within ${config.timeWindow} seconds.`;
-    
-    // Log the raid detection
+
     const embed = new EmbedBuilder()
       .setTitle('⚠️ Raid Detected!')
       .setColor(0xff0000)
-      .setDescription(`A sudden spike in joins was detected. Action configured: **${config.action}**`)
+      .setDescription(
+        `A sudden spike in joins was detected. Action configured: **${config.action}**`
+      )
       .addFields({ name: 'Triggered By', value: `${member.user.tag} (<@${member.id}>)` });
-      
+
     await LoggingService.logAction(guild, LogType.SERVER, embed);
 
     const botMember = await guild.members.fetch(guild.client.user.id);
     const hierarchyError = await ModerationService.validateHierarchy(guild, botMember, member);
-    
+
     if (hierarchyError && config.action !== 'ALERT') {
-      logger.warn(`Raid Protection cannot execute ${config.action} on ${member.id} due to hierarchy.`);
+      logger.warn(
+        `Raid Protection cannot execute ${config.action} on ${member.id} due to hierarchy.`
+      );
       return null;
     }
 
@@ -73,9 +69,7 @@ export class RaidProtectionService {
         await ModerationService.logCase(guild.id, member.id, botMember.id, 'Ban', reason);
         return 'BAN';
       } else if (config.action === 'LOCK') {
-         // Optionally disable invites or lock the server. We will just alert for now as lockdown logic is complex.
-         // "Lock server" could mean looping all channels and editing permissions.
-         return 'LOCK';
+        return 'LOCK';
       }
     } catch (err) {
       logger.error({ err }, 'Failed to execute raid protection action');

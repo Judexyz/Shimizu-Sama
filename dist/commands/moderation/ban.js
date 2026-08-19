@@ -1,6 +1,8 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { ModerationService } from '../../services/moderationService.js';
 import { LoggingService, LogType } from '../../services/loggingService.js';
+import { ManorTheme } from '../../utils/theme.js';
+import { EmbedBuilder } from 'discord.js';
 const command = {
     data: new SlashCommandBuilder()
         .setName('ban')
@@ -10,7 +12,14 @@ const command = {
         .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
     execute: async (interaction) => {
         if (!interaction.inCachedGuild()) {
-            await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+            await interaction.reply({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(ManorTheme.colors.error)
+                        .setDescription(`${ManorTheme.emojis.error} This decree can only be executed within the manor grounds.`),
+                ],
+                ephemeral: true,
+            });
             return;
         }
         const targetUser = interaction.options.getUser('target', true);
@@ -19,19 +28,38 @@ const command = {
         const moderator = interaction.member;
         const hierarchyError = await ModerationService.validateHierarchy(guild, moderator, targetUser);
         if (hierarchyError) {
-            await interaction.reply({ content: `❌ ${hierarchyError}`, ephemeral: true });
+            await interaction.reply({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(ManorTheme.colors.error)
+                        .setDescription(`${ManorTheme.emojis.error} ${hierarchyError}`),
+                ],
+                ephemeral: true,
+            });
             return;
         }
         await interaction.deferReply({ ephemeral: true });
         try {
             await guild.members.ban(targetUser, { reason });
             await ModerationService.logCase(guild.id, targetUser.id, moderator.id, 'Ban', reason);
-            const embed = LoggingService.buildModerationEmbed('Ban', targetUser, moderator.user, reason, 0xff0000);
+            const embed = LoggingService.buildModerationEmbed('Ban', targetUser, moderator.user, reason, ManorTheme.colors.error);
             await LoggingService.logAction(guild, LogType.MODERATION, embed);
-            await interaction.followUp(`✅ Successfully banned **${targetUser.tag}**.`);
+            await interaction.followUp({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(ManorTheme.colors.success)
+                        .setDescription(`${ManorTheme.emojis.moderation} By the manor's decree, **${targetUser.tag}** has been formally banished from the grounds.`),
+                ],
+            });
         }
         catch {
-            await interaction.followUp(`❌ Failed to ban the user. Please check my permissions.`);
+            await interaction.followUp({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(ManorTheme.colors.error)
+                        .setDescription(`${ManorTheme.emojis.error} I lack the authority to banish this guest. Please check my permissions.`),
+                ],
+            });
         }
     },
 };

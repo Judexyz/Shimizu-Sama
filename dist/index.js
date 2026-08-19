@@ -13,9 +13,7 @@ const bootstrap = async () => {
     await loadCommands(client);
     musicService.init(client);
     await client.start(env.DISCORD_TOKEN);
-    // Start Web Dashboard API
     startDashboardServer(client);
-    // Graceful shutdown
     const shutdown = async (signal) => {
         logger.info(`Received ${signal}, shutting down gracefully...`);
         client.destroy();

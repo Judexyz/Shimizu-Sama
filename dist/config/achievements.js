@@ -1,5 +1,4 @@
 export const achievementsRegistry = [
-    // Messaging
     {
         key: 'first_message',
         name: 'First Steps',
@@ -21,7 +20,6 @@ export const achievementsRegistry = [
         type: 'MESSAGING',
         threshold: 1000,
     },
-    // Leveling
     {
         key: 'level_5',
         name: 'Rising Star',
@@ -43,7 +41,6 @@ export const achievementsRegistry = [
         type: 'LEVELING',
         threshold: 25,
     },
-    // Economy
     {
         key: 'first_daily',
         name: 'Daily Grind',

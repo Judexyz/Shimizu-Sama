@@ -1,4 +1,9 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits, TextChannel } from 'discord.js';
+import {
+  SlashCommandBuilder,
+  ChatInputCommandInteraction,
+  PermissionFlagsBits,
+  TextChannel,
+} from 'discord.js';
 import { Command } from '../../types/index.js';
 import { TicketService } from '../../services/ticket/TicketService.js';
 import { logger } from '../../utils/logger.js';
@@ -8,13 +13,12 @@ const command: Command = {
     .setName('ticketpanel')
     .setDescription('Spawn a ticket panel in the current channel.')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addStringOption(option =>
-      option.setName('title')
-        .setDescription('Title for the ticket panel embed')
-        .setRequired(false)
+    .addStringOption((option) =>
+      option.setName('title').setDescription('Title for the ticket panel embed').setRequired(false)
     )
-    .addStringOption(option =>
-      option.setName('description')
+    .addStringOption((option) =>
+      option
+        .setName('description')
         .setDescription('Description for the ticket panel embed')
         .setRequired(false)
     ),
@@ -22,7 +26,9 @@ const command: Command = {
     if (!interaction.guildId || !interaction.channel) return;
 
     const title = interaction.options.getString('title') || 'Need Support?';
-    const description = interaction.options.getString('description') || 'To create a ticket use the Create ticket button';
+    const description =
+      interaction.options.getString('description') ||
+      'To create a ticket use the Create ticket button';
 
     await interaction.deferReply({ ephemeral: true });
 
@@ -34,10 +40,16 @@ const command: Command = {
         description
       );
 
-      await interaction.followUp({ content: '✅ Ticket panel successfully spawned!', ephemeral: true });
+      await interaction.followUp({
+        content: '✅ Ticket panel successfully spawned!',
+        ephemeral: true,
+      });
     } catch (error) {
       logger.error({ error, guildId: interaction.guildId }, 'Failed to spawn ticket panel');
-      await interaction.followUp({ content: '❌ Failed to spawn the ticket panel.', ephemeral: true });
+      await interaction.followUp({
+        content: '❌ Failed to spawn the ticket panel.',
+        ephemeral: true,
+      });
     }
   },
 };

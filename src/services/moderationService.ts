@@ -2,9 +2,6 @@ import { Guild, GuildMember, User } from 'discord.js';
 import { prisma } from '../database/prisma.js';
 
 export class ModerationService {
-  /**
-   * Validates if an action can be performed on the target by the moderator.
-   */
   static async validateHierarchy(
     guild: Guild,
     moderator: GuildMember | User,
@@ -13,7 +10,7 @@ export class ModerationService {
     if (target.id === guild.ownerId) {
       return 'You cannot moderate the server owner.';
     }
-    
+
     if (moderator.id === target.id) {
       return 'You cannot moderate yourself.';
     }
@@ -22,11 +19,21 @@ export class ModerationService {
       return 'I cannot moderate myself.';
     }
 
-    const targetMember = target instanceof GuildMember ? target : await guild.members.fetch(target.id).catch(() => null);
-    if (!targetMember) return null; // Target is not in the server, hierarchy doesn't block
+    const targetMember =
+      target instanceof GuildMember
+        ? target
+        : await guild.members.fetch(target.id).catch(() => null);
+    if (!targetMember) return null;
 
-    const moderatorMember = moderator instanceof GuildMember ? moderator : await guild.members.fetch(moderator.id).catch(() => null);
-    if (moderatorMember && targetMember.roles.highest.position >= moderatorMember.roles.highest.position && moderator.id !== guild.ownerId) {
+    const moderatorMember =
+      moderator instanceof GuildMember
+        ? moderator
+        : await guild.members.fetch(moderator.id).catch(() => null);
+    if (
+      moderatorMember &&
+      targetMember.roles.highest.position >= moderatorMember.roles.highest.position &&
+      moderator.id !== guild.ownerId
+    ) {
       return 'You cannot moderate a user with an equal or higher role.';
     }
 

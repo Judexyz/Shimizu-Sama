@@ -1,4 +1,9 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  EmbedBuilder,
+} from 'discord.js';
 import { Command } from '../types/index.js';
 import { prisma } from '../database/prisma.js';
 import { CacheService } from '../services/cacheService.js';
@@ -12,19 +17,32 @@ const command: Command = {
       subcommand
         .setName('add')
         .setDescription('Add a new custom command')
-        .addStringOption(option => option.setName('trigger').setDescription('The exact text to trigger the command').setRequired(true))
-        .addStringOption(option => option.setName('response').setDescription('The response text (supports {user}, {server}, etc.)').setRequired(true))
+        .addStringOption((option) =>
+          option
+            .setName('trigger')
+            .setDescription('The exact text to trigger the command')
+            .setRequired(true)
+        )
+        .addStringOption((option) =>
+          option
+            .setName('response')
+            .setDescription('The response text (supports {user}, {server}, etc.)')
+            .setRequired(true)
+        )
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('remove')
         .setDescription('Remove a custom command')
-        .addStringOption(option => option.setName('trigger').setDescription('The trigger of the command to remove').setRequired(true))
+        .addStringOption((option) =>
+          option
+            .setName('trigger')
+            .setDescription('The trigger of the command to remove')
+            .setRequired(true)
+        )
     )
     .addSubcommand((subcommand) =>
-      subcommand
-        .setName('list')
-        .setDescription('List all custom commands')
+      subcommand.setName('list').setDescription('List all custom commands')
     ),
 
   execute: async (interaction: ChatInputCommandInteraction) => {
@@ -74,7 +92,9 @@ const command: Command = {
       const embed = new EmbedBuilder()
         .setTitle('Custom Commands')
         .setColor(0x0099ff)
-        .setDescription(commands.map((c: any) => `**${c.trigger}**\n↳ \`${c.response}\``).join('\n\n'));
+        .setDescription(
+          commands.map((c: any) => `**${c.trigger}**\n↳ \`${c.response}\``).join('\n\n')
+        );
 
       await interaction.followUp({ embeds: [embed] });
     }

@@ -10,7 +10,10 @@ const command = {
         .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
     execute: async (interaction) => {
         if (!interaction.inCachedGuild()) {
-            await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+            await interaction.reply({
+                content: 'This command can only be used in a server.',
+                ephemeral: true,
+            });
             return;
         }
         const targetId = interaction.options.getString('target_id', true);

@@ -11,7 +11,10 @@ const command = {
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
     execute: async (interaction) => {
         if (!interaction.inCachedGuild()) {
-            await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+            await interaction.reply({
+                content: 'This command can only be used in a server.',
+                ephemeral: true,
+            });
             return;
         }
         const targetUser = interaction.options.getUser('target', true);
@@ -19,8 +22,11 @@ const command = {
         const reason = interaction.options.getString('reason') || 'No reason provided';
         const guild = interaction.guild;
         const moderator = interaction.member;
-        if (durationMinutes < 1 || durationMinutes > 40320) { // Discord max is 28 days
-            await interaction.reply({ content: 'Duration must be between 1 and 40,320 minutes (28 days).', ephemeral: true });
+        if (durationMinutes < 1 || durationMinutes > 40320) {
+            await interaction.reply({
+                content: 'Duration must be between 1 and 40,320 minutes (28 days).',
+                ephemeral: true,
+            });
             return;
         }
         const hierarchyError = await ModerationService.validateHierarchy(guild, moderator, targetUser);

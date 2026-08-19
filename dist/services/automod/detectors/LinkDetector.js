@@ -13,17 +13,16 @@ export class LinkDetector {
                 return {
                     type: this.type,
                     reason: 'Posted a Discord invite link',
-                    context: { text }
+                    context: { text },
                 };
             }
         }
         else {
-            // General link detector (which also catches invites)
             if (this.linkRegex.test(text)) {
                 return {
                     type: this.type,
                     reason: 'Posted an unauthorized external link',
-                    context: { text }
+                    context: { text },
                 };
             }
         }

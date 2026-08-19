@@ -19,10 +19,8 @@ const bootstrap = async () => {
   musicService.init(client);
   await client.start(env.DISCORD_TOKEN);
 
-  // Start Web Dashboard API
   startDashboardServer(client);
 
-  // Graceful shutdown
   const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}, shutting down gracefully...`);
 
@@ -37,25 +35,16 @@ const bootstrap = async () => {
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 
   process.on('uncaughtException', (error) => {
-    logger.error(
-      { err: error },
-      'Uncaught Exception'
-    );
+    logger.error({ err: error }, 'Uncaught Exception');
   });
 
   process.on('unhandledRejection', (error) => {
-    logger.error(
-      { err: error },
-      'Unhandled Rejection'
-    );
+    logger.error({ err: error }, 'Unhandled Rejection');
   });
 };
 
 bootstrap().catch((error) => {
-  logger.error(
-    { err: error },
-    'Fatal error during bootstrap'
-  );
+  logger.error({ err: error }, 'Fatal error during bootstrap');
 
   process.exit(1);
 });

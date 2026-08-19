@@ -17,7 +17,10 @@ const command: Command = {
 
   execute: async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.inCachedGuild()) {
-      await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        ephemeral: true,
+      });
       return;
     }
 
@@ -37,14 +40,20 @@ const command: Command = {
     try {
       const targetMember = await guild.members.fetch(targetUser.id).catch(() => null);
       if (!targetMember) {
-         await interaction.followUp(`❌ User is not in the server.`);
-         return;
+        await interaction.followUp(`❌ User is not in the server.`);
+        return;
       }
 
       await targetMember.timeout(null, reason);
       await ModerationService.logCase(guild.id, targetUser.id, moderator.id, 'Untimeout', reason);
 
-      const embed = LoggingService.buildModerationEmbed('Untimeout', targetUser, moderator.user, reason, 0x00ff00);
+      const embed = LoggingService.buildModerationEmbed(
+        'Untimeout',
+        targetUser,
+        moderator.user,
+        reason,
+        0x00ff00
+      );
       await LoggingService.logAction(guild, LogType.MODERATION, embed);
 
       await interaction.followUp(`✅ Successfully removed timeout from **${targetUser.tag}**.`);

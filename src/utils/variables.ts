@@ -8,9 +8,6 @@ export interface VariableContext {
 }
 
 export class VariableParser {
-  /**
-   * Replaces variables like {user}, {username}, {server}, etc. in a string.
-   */
   static parse(text: string, context: VariableContext): string {
     let result = text;
 

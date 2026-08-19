@@ -20,7 +20,10 @@ const command: Command = {
 
   execute: async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.inCachedGuild()) {
-      await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        ephemeral: true,
+      });
       return;
     }
 
@@ -30,9 +33,12 @@ const command: Command = {
     const guild = interaction.guild;
     const moderator = interaction.member;
 
-    if (durationMinutes < 1 || durationMinutes > 40320) { // Discord max is 28 days
-       await interaction.reply({ content: 'Duration must be between 1 and 40,320 minutes (28 days).', ephemeral: true });
-       return;
+    if (durationMinutes < 1 || durationMinutes > 40320) {
+      await interaction.reply({
+        content: 'Duration must be between 1 and 40,320 minutes (28 days).',
+        ephemeral: true,
+      });
+      return;
     }
 
     const hierarchyError = await ModerationService.validateHierarchy(guild, moderator, targetUser);
@@ -46,17 +52,26 @@ const command: Command = {
     try {
       const targetMember = await guild.members.fetch(targetUser.id).catch(() => null);
       if (!targetMember) {
-         await interaction.followUp(`❌ User is not in the server.`);
-         return;
+        await interaction.followUp(`❌ User is not in the server.`);
+        return;
       }
 
       await targetMember.timeout(durationMinutes * 60 * 1000, reason);
       await ModerationService.logCase(guild.id, targetUser.id, moderator.id, 'Timeout', reason);
 
-      const embed = LoggingService.buildModerationEmbed('Timeout', targetUser, moderator.user, reason, 0xffa500, `${durationMinutes} minutes`);
+      const embed = LoggingService.buildModerationEmbed(
+        'Timeout',
+        targetUser,
+        moderator.user,
+        reason,
+        0xffa500,
+        `${durationMinutes} minutes`
+      );
       await LoggingService.logAction(guild, LogType.MODERATION, embed);
 
-      await interaction.followUp(`✅ Successfully timed out **${targetUser.tag}** for ${durationMinutes} minutes.`);
+      await interaction.followUp(
+        `✅ Successfully timed out **${targetUser.tag}** for ${durationMinutes} minutes.`
+      );
     } catch {
       await interaction.followUp(`❌ Failed to timeout the user. Please check my permissions.`);
     }

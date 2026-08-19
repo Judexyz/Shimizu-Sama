@@ -1,4 +1,13 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, TextChannel, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  TextChannel,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} from 'discord.js';
 import { Command } from '../types/index.js';
 import { prisma } from '../database/prisma.js';
 
@@ -11,17 +20,29 @@ const command: Command = {
       subcommand
         .setName('create')
         .setDescription('Create a new role panel in the current channel')
-        .addStringOption(option => option.setName('title').setDescription('Panel title').setRequired(true))
-        .addStringOption(option => option.setName('description').setDescription('Panel description').setRequired(true))
+        .addStringOption((option) =>
+          option.setName('title').setDescription('Panel title').setRequired(true)
+        )
+        .addStringOption((option) =>
+          option.setName('description').setDescription('Panel description').setRequired(true)
+        )
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('add-role')
         .setDescription('Add a role button to a panel')
-        .addStringOption(option => option.setName('panel_id').setDescription('The ID of the panel').setRequired(true))
-        .addRoleOption(option => option.setName('role').setDescription('The role to give').setRequired(true))
-        .addStringOption(option => option.setName('label').setDescription('Button label').setRequired(true))
-        .addStringOption(option => option.setName('emoji').setDescription('Button emoji').setRequired(false))
+        .addStringOption((option) =>
+          option.setName('panel_id').setDescription('The ID of the panel').setRequired(true)
+        )
+        .addRoleOption((option) =>
+          option.setName('role').setDescription('The role to give').setRequired(true)
+        )
+        .addStringOption((option) =>
+          option.setName('label').setDescription('Button label').setRequired(true)
+        )
+        .addStringOption((option) =>
+          option.setName('emoji').setDescription('Button emoji').setRequired(false)
+        )
     ),
 
   execute: async (interaction: ChatInputCommandInteraction) => {
@@ -52,11 +73,13 @@ const command: Command = {
         data: {
           guildId,
           channelId: channel.id,
-          messageId: message.id
-        }
+          messageId: message.id,
+        },
       });
 
-      await interaction.followUp(`✅ Role panel created successfully. Panel ID: \`${roleMenu.id}\`. Use \`/rolepanel add-role\` to add buttons.`);
+      await interaction.followUp(
+        `✅ Role panel created successfully. Panel ID: \`${roleMenu.id}\`. Use \`/rolepanel add-role\` to add buttons.`
+      );
     }
 
     if (subCommand === 'add-role') {
@@ -67,7 +90,7 @@ const command: Command = {
 
       const roleMenu = await prisma.roleMenu.findUnique({
         where: { id: panelId },
-        include: { items: true }
+        include: { items: true },
       });
 
       if (!roleMenu || roleMenu.guildId !== guildId) {
@@ -80,25 +103,25 @@ const command: Command = {
         return;
       }
 
-      // Add to database
       await prisma.roleMenuItem.create({
         data: {
           roleMenuId: roleMenu.id,
           roleId: role.id,
           label,
-          emoji: emoji || null
-        }
+          emoji: emoji || null,
+        },
       });
 
-      // Fetch all items to reconstruct buttons
       const updatedMenu = await prisma.roleMenu.findUnique({
         where: { id: panelId },
-        include: { items: true }
+        include: { items: true },
       });
 
       if (!updatedMenu || !updatedMenu.messageId) return;
 
-      const channel = await interaction.guild.channels.fetch(updatedMenu.channelId).catch(() => null);
+      const channel = await interaction.guild.channels
+        .fetch(updatedMenu.channelId)
+        .catch(() => null);
       if (!channel || !(channel instanceof TextChannel)) return;
 
       const message = await channel.messages.fetch(updatedMenu.messageId).catch(() => null);
@@ -107,7 +130,6 @@ const command: Command = {
         return;
       }
 
-      // Reconstruct ActionRows (max 5 rows of 5 buttons)
       const rows: ActionRowBuilder<ButtonBuilder>[] = [];
       for (let i = 0; i < updatedMenu.items.length; i += 5) {
         const row = new ActionRowBuilder<ButtonBuilder>();
@@ -117,7 +139,7 @@ const command: Command = {
             .setCustomId(`rolepanel_${updatedMenu.id}_${item.roleId}`)
             .setLabel(item.label)
             .setStyle(ButtonStyle.Primary);
-            
+
           if (item.emoji) btn.setEmoji(item.emoji);
           row.addComponents(btn);
         }

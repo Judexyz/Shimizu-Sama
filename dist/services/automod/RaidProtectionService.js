@@ -5,10 +5,6 @@ import { ModerationService } from '../moderationService.js';
 import { LoggingService, LogType } from '../loggingService.js';
 import { logger } from '../../utils/logger.js';
 export class RaidProtectionService {
-    /**
-     * Handles a member joining to determine if a raid is occurring.
-     * Returns the action taken on the user if any (e.g. 'KICK', 'BAN'), or null.
-     */
     static async handleJoin(member) {
         const guild = member.guild;
         const configKey = `raidconfig:${guild.id}`;
@@ -17,20 +13,16 @@ export class RaidProtectionService {
             config = await prisma.raidProtection.findUnique({ where: { guildId: guild.id } });
             if (!config)
                 return null;
-            await CacheService.set(configKey, config, 300); // cache for 5 mins
+            await CacheService.set(configKey, config, 300);
         }
         if (!config.enabled)
             return null;
         const joinKey = `raidjoins:${guild.id}`;
-        // Track joins by pushing the current timestamp
         const joins = await CacheService.pushToArray(joinKey, Date.now(), config.timeWindow);
-        // Filter out joins older than the time window
         const now = Date.now();
-        const recentJoins = joins.filter(time => now - time <= config.timeWindow * 1000);
-        // Update the cache with only recent joins
+        const recentJoins = joins.filter((time) => now - time <= config.timeWindow * 1000);
         await CacheService.set(joinKey, recentJoins, config.timeWindow);
         if (recentJoins.length >= config.joinThreshold) {
-            // Raid detected!
             return await this.executeRaidAction(member, config);
         }
         return null;
@@ -38,7 +30,6 @@ export class RaidProtectionService {
     static async executeRaidAction(member, config) {
         const guild = member.guild;
         const reason = `Automated Raid Protection: Triggered by ${config.joinThreshold} joins within ${config.timeWindow} seconds.`;
-        // Log the raid detection
         const embed = new EmbedBuilder()
             .setTitle('⚠️ Raid Detected!')
             .setColor(0xff0000)
@@ -63,8 +54,6 @@ export class RaidProtectionService {
                 return 'BAN';
             }
             else if (config.action === 'LOCK') {
-                // Optionally disable invites or lock the server. We will just alert for now as lockdown logic is complex.
-                // "Lock server" could mean looping all channels and editing permissions.
                 return 'LOCK';
             }
         }

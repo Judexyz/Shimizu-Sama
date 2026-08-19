@@ -10,36 +10,38 @@ const command: Command = {
   data: new SlashCommandBuilder()
     .setName('profile')
     .setDescription('View your profile, statistics, and achievements.')
-    .addUserOption(option => 
-      option.setName('user')
+    .addUserOption((option) =>
+      option
+        .setName('user')
         .setDescription('The user whose profile you want to view')
         .setRequired(false)
     ),
   execute: async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.guildId) {
-      await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        ephemeral: true,
+      });
       return;
     }
 
     const targetUser = interaction.options.getUser('user') || interaction.user;
 
     try {
-      // Ensure profile exists
       const profile = await EconomyService.getProfile(interaction.guildId, targetUser.id);
-      
+
       const unlockedCount = await prisma.userAchievement.count({
-        where: { profileId: profile.id }
+        where: { profileId: profile.id },
       });
       const totalAchievements = achievementsRegistry.length;
 
       const nextLevelXp = LevelingService.requiredTotalXp(profile.level + 1);
       const prevLevelXp = LevelingService.requiredTotalXp(profile.level);
-      
+
       const currentLevelProgress = profile.xp - prevLevelXp;
       const xpNeededForLevel = nextLevelXp - prevLevelXp;
       const percent = Math.min(100, Math.max(0, (currentLevelProgress / xpNeededForLevel) * 100));
-      
-      // Progress bar visualization
+
       const barLength = 15;
       const filledBlocks = Math.round((percent / 100) * barLength);
       const emptyBlocks = barLength - filledBlocks;
@@ -50,20 +52,20 @@ const command: Command = {
         .setThumbnail(targetUser.displayAvatarURL())
         .setColor('#5865F2')
         .addFields(
-          { 
-            name: '📈 Leveling', 
+          {
+            name: '📈 Leveling',
             value: `**Level:** ${profile.level}\n**XP:** ${profile.xp} / ${nextLevelXp}\n\`${progressBar}\` ${Math.round(percent)}%`,
-            inline: true 
+            inline: true,
           },
-          { 
-            name: '💰 Economy', 
+          {
+            name: '💰 Economy',
             value: `**Balance:** ${profile.balance} coins\n**Total Earned:** ${profile.totalCoinsEarned} coins`,
-            inline: true 
+            inline: true,
           },
-          { 
-            name: '🏆 Achievements', 
+          {
+            name: '🏆 Achievements',
             value: `**Unlocked:** ${unlockedCount} / ${totalAchievements}`,
-            inline: false
+            inline: false,
           },
           {
             name: '📊 Statistics',
@@ -75,14 +77,17 @@ const command: Command = {
               `**Payments Sent:** ${profile.paymentsSent}`,
               `**Payments Received:** ${profile.paymentsReceived}`,
             ].join('\n'),
-            inline: false
+            inline: false,
           }
         )
         .setFooter({ text: `Member since • ${profile.createdAt.toLocaleDateString()}` });
 
       await interaction.reply({ embeds: [embed] });
     } catch (error) {
-      logger.error({ error, guildId: interaction.guildId, userId: targetUser.id }, 'Error in /profile command');
+      logger.error(
+        { error, guildId: interaction.guildId, userId: targetUser.id },
+        'Error in /profile command'
+      );
       await interaction.reply({ content: 'Failed to retrieve profile.', ephemeral: true });
     }
   },

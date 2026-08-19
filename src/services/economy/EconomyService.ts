@@ -2,18 +2,13 @@ import { prisma } from '../../database/prisma.js';
 import { logger } from '../../utils/logger.js';
 
 export class EconomyService {
-  /**
-   * Ensure user guild profile exists and return it.
-   */
   public static async getProfile(guildId: string, userId: string) {
-    // Upsert Guild to prevent foreign key constraint failures
     await prisma.guild.upsert({
       where: { id: guildId },
       update: {},
       create: { id: guildId },
     });
 
-    // Upsert User to prevent foreign key constraint failures
     await prisma.user.upsert({
       where: { id: userId },
       update: {},
@@ -32,19 +27,21 @@ export class EconomyService {
     return profile.balance;
   }
 
-  public static async addBalance(guildId: string, userId: string, amount: number, type: string): Promise<number> {
+  public static async addBalance(
+    guildId: string,
+    userId: string,
+    amount: number,
+    type: string
+  ): Promise<number> {
     if (amount <= 0) throw new Error('Amount must be positive');
 
-    // Use a transaction to ensure balance and history update atomically
     const result = await prisma.$transaction(async (tx) => {
-      // Upsert Guild
       await tx.guild.upsert({
         where: { id: guildId },
         update: {},
         create: { id: guildId },
       });
 
-      // Upsert User
       await tx.user.upsert({
         where: { id: userId },
         update: {},
@@ -73,7 +70,12 @@ export class EconomyService {
     return result;
   }
 
-  public static async removeBalance(guildId: string, userId: string, amount: number, type: string): Promise<number> {
+  public static async removeBalance(
+    guildId: string,
+    userId: string,
+    amount: number,
+    type: string
+  ): Promise<number> {
     if (amount <= 0) throw new Error('Amount must be positive');
 
     const result = await prisma.$transaction(async (tx) => {
@@ -106,7 +108,12 @@ export class EconomyService {
     return result;
   }
 
-  public static async transfer(guildId: string, fromUserId: string, toUserId: string, amount: number) {
+  public static async transfer(
+    guildId: string,
+    fromUserId: string,
+    toUserId: string,
+    amount: number
+  ) {
     if (amount <= 0) throw new Error('Amount must be positive');
     if (fromUserId === toUserId) throw new Error('Cannot transfer to yourself');
 
@@ -119,38 +126,34 @@ export class EconomyService {
         throw new Error('Insufficient funds');
       }
 
-      // Ensure recipient exists
       await tx.user.upsert({
         where: { id: toUserId },
         update: {},
         create: { id: toUserId },
       });
 
-      // Deduct sender
       const updatedSender = await tx.userGuildProfile.update({
         where: { guildId_userId: { guildId, userId: fromUserId } },
-        data: { 
+        data: {
           balance: { decrement: amount },
           paymentsSent: { increment: 1 },
         },
       });
 
-      // Add recipient
       const updatedRecipient = await tx.userGuildProfile.upsert({
         where: { guildId_userId: { guildId, userId: toUserId } },
-        update: { 
+        update: {
           balance: { increment: amount },
           paymentsReceived: { increment: 1 },
         },
-        create: { 
-          guildId, 
-          userId: toUserId, 
+        create: {
+          guildId,
+          userId: toUserId,
           balance: amount,
           paymentsReceived: 1,
         },
       });
 
-      // Log both
       await tx.economyTransaction.createMany({
         data: [
           {
@@ -169,21 +172,19 @@ export class EconomyService {
           },
         ],
       });
-      
+
       return { updatedSender, updatedRecipient };
     });
   }
 
   public static async claimDaily(guildId: string, userId: string) {
     return await prisma.$transaction(async (tx) => {
-      // Upsert Guild
       await tx.guild.upsert({
         where: { id: guildId },
         update: {},
         create: { id: guildId },
       });
 
-      // Upsert User
       await tx.user.upsert({
         where: { id: userId },
         update: {},
@@ -205,7 +206,7 @@ export class EconomyService {
         }
       }
 
-      const reward = Math.floor(Math.random() * (250 - 100 + 1)) + 100; // 100-250
+      const reward = Math.floor(Math.random() * (250 - 100 + 1)) + 100;
 
       const updatedProfile = await tx.userGuildProfile.update({
         where: { guildId_userId: { guildId, userId } },
@@ -233,14 +234,12 @@ export class EconomyService {
 
   public static async work(guildId: string, userId: string) {
     return await prisma.$transaction(async (tx) => {
-      // Upsert Guild
       await tx.guild.upsert({
         where: { id: guildId },
         update: {},
         create: { id: guildId },
       });
 
-      // Upsert User
       await tx.user.upsert({
         where: { id: userId },
         update: {},
@@ -262,7 +261,7 @@ export class EconomyService {
         }
       }
 
-      const reward = Math.floor(Math.random() * (150 - 50 + 1)) + 50; // 50-150
+      const reward = Math.floor(Math.random() * (150 - 50 + 1)) + 50;
 
       const updatedProfile = await tx.userGuildProfile.update({
         where: { guildId_userId: { guildId, userId } },
@@ -305,7 +304,6 @@ export class EconomyService {
         throw new Error('Insufficient funds');
       }
 
-      // Check if user already owns it (prevent duplicate inventory rows)
       const existingInventory = await tx.inventoryItem.findUnique({
         where: {
           profileId_itemId: {
@@ -317,7 +315,7 @@ export class EconomyService {
 
       const updatedProfile = await tx.userGuildProfile.update({
         where: { id: profile.id },
-        data: { 
+        data: {
           balance: { decrement: item.price },
           shopPurchases: { increment: 1 },
         },

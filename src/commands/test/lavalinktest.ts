@@ -38,9 +38,7 @@ const command: Command = {
     const shoukaku = client.shoukaku;
 
     if (!shoukaku) {
-      await interaction.editReply(
-        '❌ Shoukaku is not initialized.'
-      );
+      await interaction.editReply('❌ Shoukaku is not initialized.');
       return;
     }
 
@@ -82,10 +80,7 @@ RESULT: ${result}
 \`\`\``;
     };
 
-    const updateStatus = async (
-      key: keyof typeof state,
-      status: string,
-    ) => {
+    const updateStatus = async (key: keyof typeof state, status: string) => {
       state[key] = status;
 
       await interaction
@@ -102,36 +97,13 @@ RESULT: ${result}
     let player: any = null;
 
     try {
-      /*
-       * STEP 1
-       *
-       * Confirm that the Shoukaku node exists.
-       */
-
       const node = shoukaku.nodes.get(NODE_NAME);
 
       if (!node) {
-        throw new Error(
-          `Shoukaku node "${NODE_NAME}" is not registered.`
-        );
+        throw new Error(`Shoukaku node "${NODE_NAME}" is not registered.`);
       }
 
-      await updateStatus(
-        'lavalinkConnection',
-        'PASS',
-      );
-
-      /*
-       * STEP 2
-       *
-       * Wait for the actual Shoukaku "ready" event.
-       *
-       * IMPORTANT:
-       * We do NOT inspect node.state.
-       *
-       * We also don't use Rest.getInfo(), because that method
-       * does not exist in Shoukaku 4.3.0.
-       */
+      await updateStatus('lavalinkConnection', 'PASS');
 
       await new Promise<void>((resolve, reject) => {
         let finished = false;
@@ -161,117 +133,47 @@ RESULT: ${result}
         };
 
         const onReady = () => {
-          logger.info(
-            { node: NODE_NAME },
-            'Lavalink node ready event received.'
-          );
+          logger.info({ node: NODE_NAME }, 'Lavalink node ready event received.');
 
           succeed();
         };
 
         const onError = (error: Error) => {
-          fail(
-            new Error(
-              `Shoukaku node error: ${error.message}`
-            )
-          );
+          fail(new Error(`Shoukaku node error: ${error.message}`));
         };
 
-        const onClose = (
-          code: number,
-          reason: string,
-        ) => {
-          fail(
-            new Error(
-              `Lavalink WebSocket closed: ${code} ${reason || 'No reason provided'
-              }`
-            )
-          );
+        const onClose = (code: number, reason: string) => {
+          fail(new Error(`Lavalink WebSocket closed: ${code} ${reason || 'No reason provided'}`));
         };
 
         const timeout = setTimeout(() => {
-          fail(
-            new Error(
-              'Timed out waiting for Lavalink ready event after 10 seconds.'
-            )
-          );
+          fail(new Error('Timed out waiting for Lavalink ready event after 10 seconds.'));
         }, 10000);
-
-        /*
-         * If the node was already ready before the command
-         * started, Shoukaku's node state will not help us
-         * reliably across versions.
-         *
-         * The POC therefore performs the actual REST operation
-         * in Step 3. If the node is already usable, that request
-         * will prove it.
-         *
-         * We register the ready listeners first so we cannot
-         * miss a future ready event.
-         */
 
         node.once('ready', onReady);
         node.once('error', onError);
         node.once('close', onClose);
 
-        /*
-         * Shoukaku emits ready during startup. If that happened
-         * before /lavalinktest was invoked, give the node a
-         * moment and let Step 3 verify actual REST functionality.
-         *
-         * We don't reject here based on the numeric node state.
-         */
         setTimeout(() => {
           if (!finished) {
-            /*
-             * Do not fail here. The node may already be usable.
-             * Resolve so the real REST request becomes the
-             * authoritative test.
-             */
             succeed();
           }
         }, 1000);
       });
 
-      await updateStatus(
-        'shoukakuReady',
-        'PASS',
-      );
+      await updateStatus('shoukakuReady', 'PASS');
 
-      /*
-       * STEP 3
-       *
-       * Perform an actual Lavalink search.
-       *
-       * This is the real proof that the node is usable.
-       */
-
-      const searchResult = await node.rest.resolve(
-        'amsearch:Never Gonna Give You Up'
-      );
+      const searchResult = await node.rest.resolve('amsearch:Never Gonna Give You Up');
 
       if (!searchResult) {
-        throw new Error(
-          'Lavalink returned an empty response.'
-        );
+        throw new Error('Lavalink returned an empty response.');
       }
 
-      await updateStatus(
-        'youtubeSearch',
-        'PASS',
-      );
-
-      /*
-       * STEP 4
-       *
-       * Resolve the first returned track.
-       */
+      await updateStatus('youtubeSearch', 'PASS');
 
       if (searchResult.loadType === 'error') {
         const errData = searchResult.data as any;
-        throw new Error(
-          `Lavalink load failed: ${errData.message} (Cause: ${errData.cause})`
-        );
+        throw new Error(`Lavalink load failed: ${errData.message} (Cause: ${errData.cause})`);
       }
 
       let dataTracks: any[] = [];
@@ -284,29 +186,16 @@ RESULT: ${result}
       }
 
       if (dataTracks.length === 0) {
-        throw new Error(
-          `Lavalink search returned zero tracks. LoadType: ${searchResult.loadType}`
-        );
+        throw new Error(`Lavalink search returned zero tracks. LoadType: ${searchResult.loadType}`);
       }
 
       const track = dataTracks[0];
 
       if (!track || typeof track.encoded !== 'string') {
-        throw new Error(
-          'Resolved track does not contain an encoded track.'
-        );
+        throw new Error('Resolved track does not contain an encoded track.');
       }
 
-      await updateStatus(
-        'trackResolved',
-        'PASS',
-      );
-
-      /*
-       * STEP 5
-       *
-       * Join Discord voice.
-       */
+      await updateStatus('trackResolved', 'PASS');
 
       try {
         player = await shoukaku.joinVoiceChannel({
@@ -315,22 +204,10 @@ RESULT: ${result}
           shardId: interaction.guild.shardId,
         });
       } catch (error: any) {
-        throw new Error(
-          `Discord voice connection failed: ${error?.message || 'Unknown error'
-          }`
-        );
+        throw new Error(`Discord voice connection failed: ${error?.message || 'Unknown error'}`);
       }
 
-      await updateStatus(
-        'discordVoice',
-        'PASS',
-      );
-
-      /*
-       * STEP 6
-       *
-       * Tell Lavalink to play the track.
-       */
+      await updateStatus('discordVoice', 'PASS');
 
       try {
         await player.playTrack({
@@ -339,85 +216,41 @@ RESULT: ${result}
           },
         });
       } catch (error: any) {
-        throw new Error(
-          `Lavalink playback failed: ${error?.message || 'Unknown error'
-          }`
-        );
+        throw new Error(`Lavalink playback failed: ${error?.message || 'Unknown error'}`);
       }
-
-      /*
-       * Give Lavalink/Discord 5 seconds to actually start
-       * the audio stream.
-       */
 
       await new Promise<void>((resolve) => {
         setTimeout(resolve, 5000);
       });
 
-      await updateStatus(
-        'audioPlayback',
-        'PASS',
-      );
-
-      /*
-       * STEP 7
-       *
-       * Cleanly leave Discord voice.
-       */
+      await updateStatus('audioPlayback', 'PASS');
 
       try {
-        await shoukaku.leaveVoiceChannel(
-          interaction.guild.id
-        );
+        await shoukaku.leaveVoiceChannel(interaction.guild.id);
       } catch (error: any) {
-        throw new Error(
-          `Voice cleanup failed: ${error?.message || 'Unknown error'
-          }`
-        );
+        throw new Error(`Voice cleanup failed: ${error?.message || 'Unknown error'}`);
       }
 
       player = null;
 
-      await updateStatus(
-        'cleanup',
-        'PASS',
-      );
+      await updateStatus('cleanup', 'PASS');
 
       await interaction.editReply({
         content: renderDiagnostic(),
       });
 
-      logger.info(
-        'Lavalink POC completed successfully.'
-      );
+      logger.info('Lavalink POC completed successfully.');
     } catch (error: any) {
-      logger.error(
-        { err: error },
-        'Lavalink POC Failed'
-      );
-
-      /*
-       * Emergency cleanup.
-       */
+      logger.error({ err: error }, 'Lavalink POC Failed');
 
       try {
         if (player) {
           await player.destroy();
           await shoukaku.leaveVoiceChannel(interaction.guild.id);
         }
-      } catch {
-        // Ignore cleanup errors.
-      }
+      } catch {}
 
-      /*
-       * Mark the first remaining pending step as failed.
-       */
-
-      for (
-        const key of Object.keys(state) as Array<
-          keyof typeof state
-        >
-      ) {
+      for (const key of Object.keys(state) as Array<keyof typeof state>) {
         if (state[key] === 'PENDING') {
           state[key] = 'FAIL';
           break;

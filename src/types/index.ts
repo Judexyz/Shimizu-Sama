@@ -1,6 +1,12 @@
-import { ChatInputCommandInteraction, ClientEvents, SlashCommandBuilder, SlashCommandOptionsOnlyBuilder, SlashCommandSubcommandsOnlyBuilder } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  ClientEvents,
+  SlashCommandBuilder,
+  SlashCommandOptionsOnlyBuilder,
+  SlashCommandSubcommandsOnlyBuilder,
+} from 'discord.js';
 
-export type AnySlashCommandBuilder = 
+export type AnySlashCommandBuilder =
   | SlashCommandBuilder
   | SlashCommandOptionsOnlyBuilder
   | SlashCommandSubcommandsOnlyBuilder

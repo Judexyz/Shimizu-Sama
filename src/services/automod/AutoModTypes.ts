@@ -7,7 +7,7 @@ export interface Violation {
 }
 
 export interface DetectorContext {
-  rule: any; // The database AutoModRule instance
+  rule: any;
   message: Message;
 }
 

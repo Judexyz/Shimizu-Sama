@@ -7,18 +7,19 @@ const command: Command = {
   data: new SlashCommandBuilder()
     .setName('leaderboard')
     .setDescription('View the top users in this server.')
-    .addStringOption(option =>
-      option.setName('type')
+    .addStringOption((option) =>
+      option
+        .setName('type')
         .setDescription('Leaderboard type')
         .setRequired(true)
-        .addChoices(
-          { name: 'XP', value: 'xp' },
-          { name: 'Balance', value: 'balance' }
-        )
+        .addChoices({ name: 'XP', value: 'xp' }, { name: 'Balance', value: 'balance' })
     ),
   execute: async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.guildId) {
-      await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        ephemeral: true,
+      });
       return;
     }
 
@@ -37,10 +38,11 @@ const command: Command = {
       }
 
       let leaderboardStr = `🏆 **Top 10 Leaderboard (${type.toUpperCase()})**\n\n`;
-      
+
       for (let i = 0; i < topUsers.length; i++) {
         const profile = topUsers[i];
-        const value = type === 'xp' ? `${profile.xp} XP (Level ${profile.level})` : `${profile.balance} Coins`;
+        const value =
+          type === 'xp' ? `${profile.xp} XP (Level ${profile.level})` : `${profile.balance} Coins`;
         leaderboardStr += `**${i + 1}.** <@${profile.userId}> - ${value}\n`;
       }
 

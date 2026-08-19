@@ -5,13 +5,17 @@ const command = {
     data: new SlashCommandBuilder()
         .setName('leaderboard')
         .setDescription('View the top users in this server.')
-        .addStringOption(option => option.setName('type')
+        .addStringOption((option) => option
+        .setName('type')
         .setDescription('Leaderboard type')
         .setRequired(true)
         .addChoices({ name: 'XP', value: 'xp' }, { name: 'Balance', value: 'balance' })),
     execute: async (interaction) => {
         if (!interaction.guildId) {
-            await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+            await interaction.reply({
+                content: 'This command can only be used in a server.',
+                ephemeral: true,
+            });
             return;
         }
         const type = interaction.options.getString('type', true);

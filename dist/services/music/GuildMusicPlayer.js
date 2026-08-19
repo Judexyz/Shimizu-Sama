@@ -30,11 +30,6 @@ export class GuildMusicPlayer {
         this.player.on('stuck', () => this.onStuck());
         this.player.on('update', (data) => this.onUpdate(data));
     }
-    /**
-     * Start the next track in the queue.
-     *
-     * If the track fails to load, automatically move to the next track.
-     */
     async playNext(isFailed = false) {
         if (this.isTransitioning) {
             return;
@@ -57,7 +52,6 @@ export class GuildMusicPlayer {
                 clearTimeout(this.idleTimer);
                 this.idleTimer = null;
             }
-            // Clear any pending announcement from the previous track.
             if (this.announceTimeout) {
                 clearTimeout(this.announceTimeout);
                 this.announceTimeout = null;
@@ -68,13 +62,6 @@ export class GuildMusicPlayer {
                         encoded: nextTrack.track.encoded,
                     },
                 });
-                /*
-                 * Important:
-                 * playTrack() succeeding only means Lavalink accepted the track.
-                 * YouTube may still fail shortly afterwards.
-                 *
-                 * The actual PLAYING state is therefore confirmed by onStart().
-                 */
             }
             catch (error) {
                 logger.error({
@@ -90,22 +77,12 @@ export class GuildMusicPlayer {
             this.isTransitioning = false;
         }
     }
-    /**
-     * Skip the current track.
-     */
     async skip() {
         if (this.isTransitioning) {
             return;
         }
         await this.playNext(false);
     }
-    /**
-     * Stop playback and clear the queue.
-     *
-     * IMPORTANT:
-     * This does NOT disconnect from the voice channel.
-     * Use destroy()/disconnect for that.
-     */
     async stop() {
         this.queue.reset();
         if (this.announceTimeout) {
@@ -119,9 +96,6 @@ export class GuildMusicPlayer {
         this.state = PlayerState.IDLE;
         await this.player.stopTrack().catch(() => null);
     }
-    /**
-     * Destroy the music player and leave the voice channel.
-     */
     async destroy() {
         if (this.idleTimer) {
             clearTimeout(this.idleTimer);
@@ -148,22 +122,12 @@ export class GuildMusicPlayer {
             }, 'Failed to cleanly destroy player');
         }
     }
-    /**
-     * Approximate current playback position.
-     */
     get position() {
         if (this.state !== PlayerState.PLAYING) {
             return this.lastUpdate.position;
         }
-        return (this.lastUpdate.position +
-            (Date.now() - this.lastUpdate.time));
+        return this.lastUpdate.position + (Date.now() - this.lastUpdate.time);
     }
-    // ============================================================
-    // Lavalink Event Handlers
-    // ============================================================
-    /**
-     * Called when Lavalink confirms that playback actually started.
-     */
     async onStart() {
         this.state = PlayerState.PLAYING;
         this.currentTrackStarted = true;
@@ -175,27 +139,15 @@ export class GuildMusicPlayer {
         if (!track || !track.textChannelId) {
             return;
         }
-        /*
-         * Delay the announcement slightly.
-         *
-         * YouTube/Lavalink can sometimes emit TrackStart immediately
-         * before TrackException/LOAD_FAILED for an unplayable video.
-         */
         this.announceTimeout = setTimeout(async () => {
             this.announceTimeout = null;
-            // Track is no longer active.
-            if (this.state !== PlayerState.PLAYING ||
-                this.queue.current !== track) {
+            if (this.state !== PlayerState.PLAYING || this.queue.current !== track) {
                 return;
             }
             try {
                 const client = this.musicService.client;
-                const channel = await client.channels
-                    .fetch(track.textChannelId)
-                    .catch(() => null);
-                if (channel &&
-                    channel.isTextBased() &&
-                    'send' in channel) {
+                const channel = await client.channels.fetch(track.textChannelId).catch(() => null);
+                if (channel && channel.isTextBased() && 'send' in channel) {
                     const author = track.track.info.author;
                     const title = track.track.info.title;
                     if (this.currentMessage) {
@@ -204,57 +156,31 @@ export class GuildMusicPlayer {
                     this.currentMessage = await channel.send(`🎶 Now playing: **${title}** by ${author} (<@${track.requesterId}>)`);
                 }
             }
-            catch {
-                // Ignore Discord message errors.
-            }
+            catch { }
         }, 1000);
     }
-    /**
-     * Called when Lavalink reports that the current track ended.
-     */
     async onEnd(reason) {
         logger.info({
             guildId: this.guildId,
             reason,
             transitioning: this.isTransitioning,
         }, 'Track ended');
-        /*
-         * REPLACED happens when we intentionally replace the current
-         * track with another track. Do not advance the queue here.
-         */
         if (reason === 'REPLACED') {
             return;
         }
-        /*
-         * STOPPED means playback was intentionally stopped.
-         */
         if (reason === 'STOPPED') {
             this.state = PlayerState.IDLE;
             return;
         }
-        /*
-         * IMPORTANT:
-         *
-         * LOAD_FAILED must always advance the queue.
-         * If Lavalink fails to load a track (e.g. AllClientsFailedException)
-         * without ever starting it, it might incorrectly emit 'FINISHED'.
-         * We detect this by checking if the track ever fired TrackStartEvent.
-         */
         if (reason === 'LOAD_FAILED' || (reason === 'FINISHED' && !this.currentTrackStarted)) {
             this.isTransitioning = false;
             await this.playNext(true);
             return;
         }
-        /*
-         * Normal track completion.
-         */
         if (!this.isTransitioning) {
             await this.playNext(false);
         }
     }
-    /**
-     * Called when Lavalink closes the player connection.
-     */
     async onClosed(code, reason) {
         logger.warn({
             guildId: this.guildId,
@@ -263,15 +189,6 @@ export class GuildMusicPlayer {
         }, 'Player closed connection');
         await this.destroy();
     }
-    /**
-     * Called when Lavalink reports a playback exception.
-     *
-     * We log the exception here, but DO NOT call playNext().
-     *
-     * Lavalink normally follows this with LOAD_FAILED, and onEnd()
-     * is responsible for advancing the queue. This prevents the
-     * queue from accidentally advancing twice.
-     */
     async onException(event) {
         const track = this.queue.current;
         if (track) {
@@ -288,9 +205,6 @@ export class GuildMusicPlayer {
             this.announceTimeout = null;
         }
     }
-    /**
-     * Called when Lavalink considers playback stuck.
-     */
     async onStuck() {
         const track = this.queue.current;
         if (track) {
@@ -303,12 +217,8 @@ export class GuildMusicPlayer {
             await this.playNext(true);
         }
     }
-    /**
-     * Keep track of Lavalink's playback position.
-     */
     onUpdate(data) {
-        if (data.state &&
-            typeof data.state.position === 'number') {
+        if (data.state && typeof data.state.position === 'number') {
             this.lastUpdate = {
                 position: data.state.position,
                 time: data.state.time || Date.now(),

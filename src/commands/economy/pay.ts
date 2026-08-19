@@ -8,20 +8,22 @@ const command: Command = {
   data: new SlashCommandBuilder()
     .setName('pay')
     .setDescription('Pay coins to another user.')
-    .addUserOption(option => 
-      option.setName('user')
-        .setDescription('The user to pay')
-        .setRequired(true)
+    .addUserOption((option) =>
+      option.setName('user').setDescription('The user to pay').setRequired(true)
     )
-    .addIntegerOption(option =>
-      option.setName('amount')
+    .addIntegerOption((option) =>
+      option
+        .setName('amount')
         .setDescription('The amount of coins to pay')
         .setRequired(true)
         .setMinValue(1)
     ),
   execute: async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.guildId) {
-      await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        ephemeral: true,
+      });
       return;
     }
 
@@ -34,25 +36,45 @@ const command: Command = {
     }
 
     try {
-      const { updatedSender, updatedRecipient } = await EconomyService.transfer(interaction.guildId, interaction.user.id, targetUser.id, amount);
+      const { updatedSender, updatedRecipient } = await EconomyService.transfer(
+        interaction.guildId,
+        interaction.user.id,
+        targetUser.id,
+        amount
+      );
       await interaction.reply(`💸 You paid **${amount} coins** to **${targetUser.username}**!`);
 
-      // Check achievements for sender
-      AchievementService.checkEconomyAchievements(updatedSender, interaction.channel as any).catch(err => {
-        logger.error({ err, guildId: interaction.guildId, userId: interaction.user.id }, 'Failed to check achievements for sender');
-      });
+      AchievementService.checkEconomyAchievements(updatedSender, interaction.channel as any).catch(
+        (err) => {
+          logger.error(
+            { err, guildId: interaction.guildId, userId: interaction.user.id },
+            'Failed to check achievements for sender'
+          );
+        }
+      );
 
-      // Check achievements for recipient
-      AchievementService.checkEconomyAchievements(updatedRecipient, interaction.channel as any).catch(err => {
-        logger.error({ err, guildId: interaction.guildId, userId: targetUser.id }, 'Failed to check achievements for recipient');
+      AchievementService.checkEconomyAchievements(
+        updatedRecipient,
+        interaction.channel as any
+      ).catch((err) => {
+        logger.error(
+          { err, guildId: interaction.guildId, userId: targetUser.id },
+          'Failed to check achievements for recipient'
+        );
       });
     } catch (error: any) {
       if (error.message && error.message.includes('Insufficient funds')) {
-        await interaction.reply({ content: 'You do not have enough coins to make this payment.', ephemeral: true });
+        await interaction.reply({
+          content: 'You do not have enough coins to make this payment.',
+          ephemeral: true,
+        });
       } else if (error.message && error.message.includes('yourself')) {
         await interaction.reply({ content: 'You cannot pay yourself.', ephemeral: true });
       } else {
-        logger.error({ error, guildId: interaction.guildId, userId: interaction.user.id }, 'Error in /pay command');
+        logger.error(
+          { error, guildId: interaction.guildId, userId: interaction.user.id },
+          'Error in /pay command'
+        );
         await interaction.reply({ content: 'Failed to process payment.', ephemeral: true });
       }
     }

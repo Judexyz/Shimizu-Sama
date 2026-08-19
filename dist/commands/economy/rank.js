@@ -5,13 +5,14 @@ import { logger } from '../../utils/logger.js';
 const command = {
     data: new SlashCommandBuilder()
         .setName('rank')
-        .setDescription('Check your or another user\'s current level and XP.')
-        .addUserOption(option => option.setName('user')
-        .setDescription('The user to check')
-        .setRequired(false)),
+        .setDescription("Check your or another user's current level and XP.")
+        .addUserOption((option) => option.setName('user').setDescription('The user to check').setRequired(false)),
     execute: async (interaction) => {
         if (!interaction.guildId) {
-            await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+            await interaction.reply({
+                content: 'This command can only be used in a server.',
+                ephemeral: true,
+            });
             return;
         }
         const targetUser = interaction.options.getUser('user') || interaction.user;
@@ -24,7 +25,6 @@ const command = {
             const xpInCurrentLevel = currentXp - prevLevelXp;
             const xpNeededForNextLevel = nextLevelXp - prevLevelXp;
             const progressPercent = Math.min(100, Math.max(0, Math.floor((xpInCurrentLevel / xpNeededForNextLevel) * 100)));
-            // Simple progress bar
             const barLength = 20;
             const filledLength = Math.floor((progressPercent / 100) * barLength);
             const emptyLength = barLength - filledLength;

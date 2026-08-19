@@ -21,7 +21,7 @@ export class QueueManager {
           return this.current;
         }
         this.history.push(this.current);
-        // Cap history to 20 to prevent memory leaks over long sessions
+
         if (this.history.length > 20) {
           this.history.shift();
         }

@@ -7,16 +7,21 @@ const command = {
     data: new SlashCommandBuilder()
         .setName('achievements')
         .setDescription('View your unlocked and locked achievements.')
-        .addUserOption(option => option.setName('user')
+        .addUserOption((option) => option
+        .setName('user')
         .setDescription('The user whose achievements you want to view')
         .setRequired(false))
-        .addStringOption(option => option.setName('category')
+        .addStringOption((option) => option
+        .setName('category')
         .setDescription('Filter achievements by category')
         .setRequired(false)
         .addChoices({ name: 'All', value: 'ALL' }, { name: 'Messaging', value: 'MESSAGING' }, { name: 'Leveling', value: 'LEVELING' }, { name: 'Economy', value: 'ECONOMY' })),
     execute: async (interaction) => {
         if (!interaction.guildId) {
-            await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+            await interaction.reply({
+                content: 'This command can only be used in a server.',
+                ephemeral: true,
+            });
             return;
         }
         const targetUser = interaction.options.getUser('user') || interaction.user;
@@ -24,15 +29,14 @@ const command = {
         try {
             const profile = await EconomyService.getProfile(interaction.guildId, targetUser.id);
             const unlockedRecords = await prisma.userAchievement.findMany({
-                where: { profileId: profile.id }
+                where: { profileId: profile.id },
             });
-            const unlockedMap = new Map(unlockedRecords.map(r => [r.achievementKey, r.unlockedAt]));
-            const filteredAchievements = achievementsRegistry.filter(a => categoryFilter === 'ALL' || a.type === categoryFilter);
+            const unlockedMap = new Map(unlockedRecords.map((r) => [r.achievementKey, r.unlockedAt]));
+            const filteredAchievements = achievementsRegistry.filter((a) => categoryFilter === 'ALL' || a.type === categoryFilter);
             const embed = new EmbedBuilder()
                 .setTitle(`${targetUser.username}'s Achievements`)
                 .setColor('#FFD700');
             let description = `**Progress:** ${unlockedRecords.length} / ${achievementsRegistry.length} Unlocked\n\n`;
-            // Helper to calculate progress for locked achievements
             const getProgressString = (a) => {
                 let current = 0;
                 if (a.type === 'MESSAGING') {
@@ -74,8 +78,6 @@ const command = {
                     description += `🔒 **${ach.name}**\n${ach.description}\n${getProgressString(ach)}\n\n`;
                 }
             }
-            // If the description gets too long for a single embed (limit is 4096), we should slice it.
-            // For now, with ~13 achievements, it easily fits.
             if (description.length > 4096) {
                 description = description.substring(0, 4090) + '...';
             }

@@ -7,8 +7,7 @@ export class DuplicateDetector implements Detector {
 
   async detect(message: Message, context: DetectorContext): Promise<Violation | null> {
     if (!message.guild || message.author.bot) return null;
-    
-    // threshold defaults to 3 exact same messages within 60 seconds
+
     const threshold = context.rule.threshold || 3;
     const cacheKey = `automod:dupe:${message.guild.id}:${message.author.id}:${message.content}`;
 
@@ -18,7 +17,7 @@ export class DuplicateDetector implements Detector {
       return {
         type: this.type,
         reason: `Sent the exact same message ${count} times`,
-        context: { count, threshold, text: message.content }
+        context: { count, threshold, text: message.content },
       };
     }
     return null;
@@ -31,14 +30,14 @@ export class MentionDetector implements Detector {
   async detect(message: Message, context: DetectorContext): Promise<Violation | null> {
     if (!message.guild || message.author.bot) return null;
 
-    const threshold = context.rule.threshold || 5; // 5 mentions per message
+    const threshold = context.rule.threshold || 5;
     const mentionCount = message.mentions.users.size + message.mentions.roles.size;
 
     if (mentionCount > threshold) {
       return {
         type: this.type,
         reason: `Exceeded mention threshold (${mentionCount}/${threshold})`,
-        context: { mentionCount, threshold }
+        context: { mentionCount, threshold },
       };
     }
     return null;
@@ -58,7 +57,7 @@ export class LengthDetector implements Detector {
       return {
         type: this.type,
         reason: `Message length (${message.content.length}) exceeded limit (${maxLength})`,
-        context: { length: message.content.length, maxLength }
+        context: { length: message.content.length, maxLength },
       };
     }
     return null;
@@ -72,19 +71,20 @@ export class EmojiDetector implements Detector {
     if (!message.guild || message.author.bot) return null;
 
     const threshold = context.rule.threshold || 10;
-    
-    // Naive emoji counting (custom + unicode)
+
     const customEmojis = (message.content.match(/<a?:.+?:\d+>/g) || []).length;
-    // Regex for basic unicode emojis
-    const unicodeEmojis = (message.content.match(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu) || []).length;
-    
+
+    const unicodeEmojis = (
+      message.content.match(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu) || []
+    ).length;
+
     const total = customEmojis + unicodeEmojis;
 
     if (total > threshold) {
       return {
         type: this.type,
         reason: `Exceeded emoji threshold (${total}/${threshold})`,
-        context: { total, threshold }
+        context: { total, threshold },
       };
     }
     return null;

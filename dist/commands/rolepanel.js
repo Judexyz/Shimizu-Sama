@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits, TextChannel, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, TextChannel, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, } from 'discord.js';
 import { prisma } from '../database/prisma.js';
 const command = {
     data: new SlashCommandBuilder()
@@ -8,15 +8,15 @@ const command = {
         .addSubcommand((subcommand) => subcommand
         .setName('create')
         .setDescription('Create a new role panel in the current channel')
-        .addStringOption(option => option.setName('title').setDescription('Panel title').setRequired(true))
-        .addStringOption(option => option.setName('description').setDescription('Panel description').setRequired(true)))
+        .addStringOption((option) => option.setName('title').setDescription('Panel title').setRequired(true))
+        .addStringOption((option) => option.setName('description').setDescription('Panel description').setRequired(true)))
         .addSubcommand((subcommand) => subcommand
         .setName('add-role')
         .setDescription('Add a role button to a panel')
-        .addStringOption(option => option.setName('panel_id').setDescription('The ID of the panel').setRequired(true))
-        .addRoleOption(option => option.setName('role').setDescription('The role to give').setRequired(true))
-        .addStringOption(option => option.setName('label').setDescription('Button label').setRequired(true))
-        .addStringOption(option => option.setName('emoji').setDescription('Button emoji').setRequired(false))),
+        .addStringOption((option) => option.setName('panel_id').setDescription('The ID of the panel').setRequired(true))
+        .addRoleOption((option) => option.setName('role').setDescription('The role to give').setRequired(true))
+        .addStringOption((option) => option.setName('label').setDescription('Button label').setRequired(true))
+        .addStringOption((option) => option.setName('emoji').setDescription('Button emoji').setRequired(false))),
     execute: async (interaction) => {
         if (!interaction.inCachedGuild())
             return;
@@ -40,8 +40,8 @@ const command = {
                 data: {
                     guildId,
                     channelId: channel.id,
-                    messageId: message.id
-                }
+                    messageId: message.id,
+                },
             });
             await interaction.followUp(`✅ Role panel created successfully. Panel ID: \`${roleMenu.id}\`. Use \`/rolepanel add-role\` to add buttons.`);
         }
@@ -52,7 +52,7 @@ const command = {
             const emoji = interaction.options.getString('emoji', false);
             const roleMenu = await prisma.roleMenu.findUnique({
                 where: { id: panelId },
-                include: { items: true }
+                include: { items: true },
             });
             if (!roleMenu || roleMenu.guildId !== guildId) {
                 await interaction.followUp(`❌ Panel not found.`);
@@ -62,23 +62,23 @@ const command = {
                 await interaction.followUp(`❌ Maximum 25 buttons allowed per panel.`);
                 return;
             }
-            // Add to database
             await prisma.roleMenuItem.create({
                 data: {
                     roleMenuId: roleMenu.id,
                     roleId: role.id,
                     label,
-                    emoji: emoji || null
-                }
+                    emoji: emoji || null,
+                },
             });
-            // Fetch all items to reconstruct buttons
             const updatedMenu = await prisma.roleMenu.findUnique({
                 where: { id: panelId },
-                include: { items: true }
+                include: { items: true },
             });
             if (!updatedMenu || !updatedMenu.messageId)
                 return;
-            const channel = await interaction.guild.channels.fetch(updatedMenu.channelId).catch(() => null);
+            const channel = await interaction.guild.channels
+                .fetch(updatedMenu.channelId)
+                .catch(() => null);
             if (!channel || !(channel instanceof TextChannel))
                 return;
             const message = await channel.messages.fetch(updatedMenu.messageId).catch(() => null);
@@ -86,7 +86,6 @@ const command = {
                 await interaction.followUp(`❌ Original panel message was deleted.`);
                 return;
             }
-            // Reconstruct ActionRows (max 5 rows of 5 buttons)
             const rows = [];
             for (let i = 0; i < updatedMenu.items.length; i += 5) {
                 const row = new ActionRowBuilder();

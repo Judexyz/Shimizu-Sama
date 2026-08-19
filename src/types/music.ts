@@ -3,7 +3,7 @@ import { Track } from 'shoukaku';
 export interface MusicTrack {
   track: Track;
   requesterId: string;
-  textChannelId: string; // Used to send 'Now Playing' messages
+  textChannelId: string;
 }
 
 export enum LoopMode {

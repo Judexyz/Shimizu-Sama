@@ -9,13 +9,15 @@ const command: Command = {
   data: new SlashCommandBuilder()
     .setName('achievements')
     .setDescription('View your unlocked and locked achievements.')
-    .addUserOption(option => 
-      option.setName('user')
+    .addUserOption((option) =>
+      option
+        .setName('user')
         .setDescription('The user whose achievements you want to view')
         .setRequired(false)
     )
-    .addStringOption(option =>
-      option.setName('category')
+    .addStringOption((option) =>
+      option
+        .setName('category')
         .setDescription('Filter achievements by category')
         .setRequired(false)
         .addChoices(
@@ -27,7 +29,10 @@ const command: Command = {
     ),
   execute: async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.guildId) {
-      await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        ephemeral: true,
+      });
       return;
     }
 
@@ -36,14 +41,14 @@ const command: Command = {
 
     try {
       const profile = await EconomyService.getProfile(interaction.guildId, targetUser.id);
-      
-      const unlockedRecords = await prisma.userAchievement.findMany({
-        where: { profileId: profile.id }
-      });
-      const unlockedMap = new Map(unlockedRecords.map(r => [r.achievementKey, r.unlockedAt]));
 
-      const filteredAchievements = achievementsRegistry.filter(a => 
-        categoryFilter === 'ALL' || a.type === categoryFilter
+      const unlockedRecords = await prisma.userAchievement.findMany({
+        where: { profileId: profile.id },
+      });
+      const unlockedMap = new Map(unlockedRecords.map((r) => [r.achievementKey, r.unlockedAt]));
+
+      const filteredAchievements = achievementsRegistry.filter(
+        (a) => categoryFilter === 'ALL' || a.type === categoryFilter
       );
 
       const embed = new EmbedBuilder()
@@ -52,7 +57,6 @@ const command: Command = {
 
       let description = `**Progress:** ${unlockedRecords.length} / ${achievementsRegistry.length} Unlocked\n\n`;
 
-      // Helper to calculate progress for locked achievements
       const getProgressString = (a: any) => {
         let current = 0;
         if (a.type === 'MESSAGING') {
@@ -61,14 +65,24 @@ const command: Command = {
           current = profile.level;
         } else if (a.type === 'ECONOMY') {
           switch (a.key) {
-            case 'first_daily': current = profile.dailyClaims; break;
+            case 'first_daily':
+              current = profile.dailyClaims;
+              break;
             case 'first_work':
-            case 'hard_worker': current = profile.workCompletions; break;
-            case 'first_payment': current = profile.paymentsSent; break;
-            case 'first_purchase': current = profile.shopPurchases; break;
+            case 'hard_worker':
+              current = profile.workCompletions;
+              break;
+            case 'first_payment':
+              current = profile.paymentsSent;
+              break;
+            case 'first_purchase':
+              current = profile.shopPurchases;
+              break;
             case 'coins_10000':
             case 'millionaire':
-            case 'entrepreneur': current = profile.totalCoinsEarned; break;
+            case 'entrepreneur':
+              current = profile.totalCoinsEarned;
+              break;
           }
         }
         return `*Progress: ${current} / ${a.threshold}*`;
@@ -83,8 +97,6 @@ const command: Command = {
         }
       }
 
-      // If the description gets too long for a single embed (limit is 4096), we should slice it.
-      // For now, with ~13 achievements, it easily fits.
       if (description.length > 4096) {
         description = description.substring(0, 4090) + '...';
       }
@@ -93,7 +105,10 @@ const command: Command = {
 
       await interaction.reply({ embeds: [embed] });
     } catch (error) {
-      logger.error({ error, guildId: interaction.guildId, userId: targetUser.id }, 'Error in /achievements command');
+      logger.error(
+        { error, guildId: interaction.guildId, userId: targetUser.id },
+        'Error in /achievements command'
+      );
       await interaction.reply({ content: 'Failed to retrieve achievements.', ephemeral: true });
     }
   },

@@ -20,7 +20,7 @@ export class BadWordDetector implements Detector {
         return {
           type: this.type,
           reason: `Used a blocked word: ||${word}||`,
-          context: { word, text: message.content }
+          context: { word, text: message.content },
         };
       }
     }

@@ -42,27 +42,18 @@ export class ShimizuClient extends Client {
             reconnectTries: 10,
             restTimeout: 10000,
         });
-        /*
-         * Lavalink node successfully connected.
-         */
         shoukaku.on('ready', (name) => {
             logger.info({
                 name,
                 connectedNodes: [...shoukaku.nodes.keys()],
             }, 'Shoukaku Node Ready');
         });
-        /*
-         * Node error.
-         */
         shoukaku.on('error', (name, error) => {
             logger.error({
                 name,
                 error,
             }, 'Shoukaku Node Error');
         });
-        /*
-         * Lavalink WebSocket closed.
-         */
         shoukaku.on('close', (name, code, reason) => {
             logger.warn({
                 name,
@@ -71,9 +62,6 @@ export class ShimizuClient extends Client {
                 connectedNodes: [...shoukaku.nodes.keys()],
             }, 'Shoukaku Node Closed WebSocket');
         });
-        /*
-         * Shoukaku disconnected from Lavalink.
-         */
         shoukaku.on('disconnect', (name, count) => {
             logger.warn({
                 name,
@@ -81,11 +69,6 @@ export class ShimizuClient extends Client {
                 connectedNodes: [...shoukaku.nodes.keys()],
             }, 'Shoukaku Node Disconnected');
         });
-        /*
-         * Debug logging.
-         *
-         * This is useful while fixing the Lavalink connection.
-         */
         shoukaku.on('debug', (name, info) => {
             logger.debug({
                 name,
@@ -97,14 +80,6 @@ export class ShimizuClient extends Client {
     async start(token) {
         try {
             logger.info('Starting Shimizu-sama...');
-            /*
-             * IMPORTANT:
-             *
-             * Shoukaku is created BEFORE Discord login.
-             *
-             * DiscordJS connector waits for Discord READY,
-             * then establishes the Lavalink connection.
-             */
             await this.login(token);
             logger.info({
                 discordReady: this.isReady(),

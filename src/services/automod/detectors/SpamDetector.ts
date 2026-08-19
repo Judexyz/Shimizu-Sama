@@ -9,18 +9,16 @@ export class SpamDetector implements Detector {
     if (!message.guild || message.author.bot) return null;
 
     const key = `automod:spam:${message.guild.id}:${message.author.id}`;
-    
-    // We increment a counter in cache, expiring after 5 seconds
+
     const count = await CacheService.increment(key, 1, 5);
-    
-    // threshold defaults to 5 messages per 5 seconds
+
     const threshold = context.rule.threshold || 5;
 
     if (count >= threshold) {
       return {
         type: this.type,
         reason: `Sent ${count} messages within 5 seconds`,
-        context: { count, threshold }
+        context: { count, threshold },
       };
     }
 

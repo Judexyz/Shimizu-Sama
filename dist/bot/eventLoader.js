@@ -10,7 +10,9 @@ export const loadEvents = async (client) => {
         logger.warn('Events directory does not exist, skipping event loading.');
         return;
     }
-    const eventFiles = fs.readdirSync(eventsPath).filter((file) => file.endsWith('.ts') || file.endsWith('.js'));
+    const eventFiles = fs
+        .readdirSync(eventsPath)
+        .filter((file) => file.endsWith('.ts') || file.endsWith('.js'));
     for (const file of eventFiles) {
         const filePath = path.join(eventsPath, file);
         try {

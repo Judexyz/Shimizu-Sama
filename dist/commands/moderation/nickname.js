@@ -3,13 +3,19 @@ import { ModerationService } from '../../services/moderationService.js';
 const command = {
     data: new SlashCommandBuilder()
         .setName('nickname')
-        .setDescription('Changes a user\'s nickname.')
+        .setDescription("Changes a user's nickname.")
         .addUserOption((option) => option.setName('target').setDescription('The user to nickname').setRequired(true))
-        .addStringOption((option) => option.setName('nickname').setDescription('The new nickname (leave empty to reset)').setRequired(false))
+        .addStringOption((option) => option
+        .setName('nickname')
+        .setDescription('The new nickname (leave empty to reset)')
+        .setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageNicknames),
     execute: async (interaction) => {
         if (!interaction.inCachedGuild()) {
-            await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+            await interaction.reply({
+                content: 'This command can only be used in a server.',
+                ephemeral: true,
+            });
             return;
         }
         const targetUser = interaction.options.getUser('target', true);

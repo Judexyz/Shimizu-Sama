@@ -12,7 +12,6 @@ const event = {
                 return;
             if (newMessage.author?.bot)
                 return;
-            // Run AutoMod on edits to catch users bypassing filters by editing
             if (newMessage.content !== oldMessage.content) {
                 await AutoModEngine.handleMessage(newMessage);
             }

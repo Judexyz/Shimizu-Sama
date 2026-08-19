@@ -4,18 +4,18 @@ import { VariableParser } from '../utils/variables.js';
 import { RaidProtectionService } from '../services/automod/RaidProtectionService.js';
 import { logger } from '../utils/logger.js';
 import { LoggingService, LogType } from '../services/loggingService.js';
+import { ServerStatsService } from '../services/serverStats/ServerStatsService.js';
 const event = {
     name: Events.GuildMemberAdd,
     execute: async (member) => {
         const guild = member.guild;
         try {
-            // 1. Raid Protection Check
             const raidAction = await RaidProtectionService.handleJoin(member);
             if (raidAction === 'KICK')
-                return; // User was kicked, skip welcome
+                return;
             if (raidAction === 'BAN')
-                return; // User was banned, skip welcome
-            // 2. Autoroles
+                return;
+            ServerStatsService.updateGuildStats(guild).catch(() => null);
             const autoroles = await prisma.autorole.findMany({ where: { guildId: guild.id } });
             if (autoroles.length > 0) {
                 const rolesToAdd = autoroles.map((ar) => ar.roleId);
@@ -23,7 +23,6 @@ const event = {
                     await member.roles.add(rolesToAdd);
                 }
                 catch (err) {
-                    // Log autorole failure
                     const embed = new EmbedBuilder()
                         .setTitle('Autorole Failed')
                         .setColor(0xff0000)
@@ -31,7 +30,6 @@ const event = {
                     await LoggingService.logAction(guild, LogType.SERVER, embed);
                 }
             }
-            // 3. Welcome Message
             const welcomeConfig = await prisma.welcomeConfig.findUnique({ where: { guildId: guild.id } });
             if (welcomeConfig?.enabled && welcomeConfig.channelId && welcomeConfig.message) {
                 const channel = await guild.channels.fetch(welcomeConfig.channelId).catch(() => null);
@@ -39,12 +37,18 @@ const event = {
                     const context = { user: member.user, member, guild, channel };
                     const parsedMessage = VariableParser.parse(welcomeConfig.message, context);
                     const embed = new EmbedBuilder()
-                        .setAuthor({ name: `A new member has joined!`, iconURL: member.user.displayAvatarURL() })
+                        .setAuthor({
+                        name: `A new member has joined!`,
+                        iconURL: member.user.displayAvatarURL(),
+                    })
                         .setTitle(`Welcome to ${guild.name}! ✨`)
                         .setDescription(parsedMessage)
                         .setThumbnail(member.user.displayAvatarURL({ size: 512 }))
-                        .setColor('#ffb6c1') // Pastel pink
-                        .setFooter({ text: `You are our ${guild.memberCount}th member!`, iconURL: guild.iconURL() || undefined })
+                        .setColor('#ffb6c1')
+                        .setFooter({
+                        text: `You are our ${guild.memberCount}th member!`,
+                        iconURL: guild.iconURL() || undefined,
+                    })
                         .setTimestamp();
                     await channel.send({ content: `<@${member.id}>`, embeds: [embed] }).catch(() => {
                         logger.warn(`Failed to send welcome message in guild ${guild.id}`);

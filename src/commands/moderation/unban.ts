@@ -17,7 +17,10 @@ const command: Command = {
 
   execute: async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.inCachedGuild()) {
-      await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        ephemeral: true,
+      });
       return;
     }
 
@@ -38,7 +41,13 @@ const command: Command = {
       await guild.bans.remove(targetId, reason);
       await ModerationService.logCase(guild.id, targetId, moderator.id, 'Unban', reason);
 
-      const embed = LoggingService.buildModerationEmbed('Unban', ban.user, moderator.user, reason, 0x00ff00);
+      const embed = LoggingService.buildModerationEmbed(
+        'Unban',
+        ban.user,
+        moderator.user,
+        reason,
+        0x00ff00
+      );
       await LoggingService.logAction(guild, LogType.MODERATION, embed);
 
       await interaction.followUp(`✅ Successfully unbanned **${ban.user.tag}**.`);

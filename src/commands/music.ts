@@ -1,76 +1,47 @@
-import {
-  ChatInputCommandInteraction,
-  SlashCommandBuilder,
-  GuildMember,
-} from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder, GuildMember } from 'discord.js';
 import { Command } from '../types/index.js';
 import { musicService } from '../services/music/MusicService.js';
 import { MusicTrack, LoopMode, PlayerState } from '../types/music.js';
+import { ManorTheme } from '../utils/theme.js';
+import { EmbedBuilder } from 'discord.js';
 
 const command: Command = {
   data: new SlashCommandBuilder()
     .setName('music')
     .setDescription('Music player commands.')
 
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
         .setName('play')
         .setDescription('Play a song from YouTube.')
-        .addStringOption(opt =>
-          opt
-            .setName('query')
-            .setDescription('Song title or URL')
-            .setRequired(true)
+        .addStringOption((opt) =>
+          opt.setName('query').setDescription('Song title or URL').setRequired(true)
         )
     )
 
-    .addSubcommand(sub =>
-      sub
-        .setName('pause')
-        .setDescription('Pause the current song.')
+    .addSubcommand((sub) => sub.setName('pause').setDescription('Pause the current song.'))
+
+    .addSubcommand((sub) => sub.setName('resume').setDescription('Resume the current song.'))
+
+    .addSubcommand((sub) => sub.setName('skip').setDescription('Skip the current song.'))
+
+    .addSubcommand((sub) => sub.setName('stop').setDescription('Stop playing and clear the queue.'))
+
+    .addSubcommand((sub) =>
+      sub.setName('disconnect').setDescription('Stop playing and leave the channel.')
     )
 
-    .addSubcommand(sub =>
-      sub
-        .setName('resume')
-        .setDescription('Resume the current song.')
+    .addSubcommand((sub) => sub.setName('queue').setDescription('Show the current queue.'))
+
+    .addSubcommand((sub) =>
+      sub.setName('nowplaying').setDescription('Show the currently playing song.')
     )
 
-    .addSubcommand(sub =>
-      sub
-        .setName('skip')
-        .setDescription('Skip the current song.')
-    )
-
-    .addSubcommand(sub =>
-      sub
-        .setName('stop')
-        .setDescription('Stop playing and clear the queue.')
-    )
-
-    .addSubcommand(sub =>
-      sub
-        .setName('disconnect')
-        .setDescription('Stop playing and leave the channel.')
-    )
-
-    .addSubcommand(sub =>
-      sub
-        .setName('queue')
-        .setDescription('Show the current queue.')
-    )
-
-    .addSubcommand(sub =>
-      sub
-        .setName('nowplaying')
-        .setDescription('Show the currently playing song.')
-    )
-
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
         .setName('volume')
         .setDescription('Set the volume.')
-        .addIntegerOption(opt =>
+        .addIntegerOption((opt) =>
           opt
             .setName('level')
             .setDescription('Volume level (1-100)')
@@ -80,11 +51,11 @@ const command: Command = {
         )
     )
 
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
         .setName('seek')
         .setDescription('Seek to a specific position.')
-        .addIntegerOption(opt =>
+        .addIntegerOption((opt) =>
           opt
             .setName('seconds')
             .setDescription('Seconds to seek to')
@@ -93,17 +64,13 @@ const command: Command = {
         )
     )
 
-    .addSubcommand(sub =>
-      sub
-        .setName('shuffle')
-        .setDescription('Shuffle the current queue.')
-    )
+    .addSubcommand((sub) => sub.setName('shuffle').setDescription('Shuffle the current queue.'))
 
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
         .setName('loop')
         .setDescription('Set loop mode.')
-        .addStringOption(opt =>
+        .addStringOption((opt) =>
           opt
             .setName('mode')
             .setDescription('Loop mode')
@@ -116,24 +83,16 @@ const command: Command = {
         )
     )
 
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
         .setName('remove')
         .setDescription('Remove a track from the queue.')
-        .addIntegerOption(opt =>
-          opt
-            .setName('position')
-            .setDescription('Queue position')
-            .setRequired(true)
-            .setMinValue(1)
+        .addIntegerOption((opt) =>
+          opt.setName('position').setDescription('Queue position').setRequired(true).setMinValue(1)
         )
     )
 
-    .addSubcommand(sub =>
-      sub
-        .setName('clear')
-        .setDescription('Clear the queue.')
-    ),
+    .addSubcommand((sub) => sub.setName('clear').setDescription('Clear the queue.')),
 
   execute: async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.guild || !interaction.member) {
@@ -143,14 +102,15 @@ const command: Command = {
     const member = interaction.member as GuildMember;
     const voiceChannel = member.voice.channel;
 
-    // ============================================================
-    // Voice channel checks
-    // ============================================================
-
     if (!voiceChannel) {
       await interaction.reply({
-        content:
-          '❌ You must be in a voice channel to use music commands.',
+        embeds: [
+          new EmbedBuilder()
+            .setColor(ManorTheme.colors.error)
+            .setDescription(
+              `${ManorTheme.emojis.error} My deepest apologies, but I cannot entertain you unless you are seated in a parlor (Voice Channel).`
+            ),
+        ],
         ephemeral: true,
       });
       return;
@@ -158,25 +118,29 @@ const command: Command = {
 
     if (!voiceChannel.joinable) {
       await interaction.reply({
-        content:
-          '❌ I do not have permission to join your voice channel.',
+        embeds: [
+          new EmbedBuilder()
+            .setColor(ManorTheme.colors.error)
+            .setDescription(
+              `${ManorTheme.emojis.error} I have been denied entry to that parlor. Please ensure I have the proper invitations (Permissions).`
+            ),
+        ],
         ephemeral: true,
       });
       return;
     }
 
-    // Check if the bot is already in another voice channel.
-    const botMember = await interaction.guild.members.fetch(
-      interaction.client.user.id
-    );
+    const botMember = await interaction.guild.members.fetch(interaction.client.user.id);
 
-    if (
-      botMember.voice.channel &&
-      botMember.voice.channel.id !== voiceChannel.id
-    ) {
+    if (botMember.voice.channel && botMember.voice.channel.id !== voiceChannel.id) {
       await interaction.reply({
-        content:
-          '❌ I am already playing in another voice channel.',
+        embeds: [
+          new EmbedBuilder()
+            .setColor(ManorTheme.colors.error)
+            .setDescription(
+              `${ManorTheme.emojis.error} Forgive me, but I am currently performing for guests in another parlor.`
+            ),
+        ],
         ephemeral: true,
       });
       return;
@@ -186,43 +150,32 @@ const command: Command = {
 
     await interaction.deferReply();
 
-    // ============================================================
-    // PLAY
-    // ============================================================
-
     if (sub === 'play') {
-      const query = interaction.options.getString(
-        'query',
-        true
-      );
+      const query = interaction.options.getString('query', true);
 
-      const searchPrefix = query.startsWith('http')
-        ? ''
-        : 'amsearch:';
+      const searchPrefix = query.startsWith('http') ? '' : 'amsearch:';
 
-      let player = musicService.getPlayer(
-        interaction.guild.id
-      );
+      let player = musicService.getPlayer(interaction.guild.id);
 
       try {
-        console.log(
-          `[Music] Resolving query: ${searchPrefix}${query}`
-        );
+        console.log(`[Music] Resolving query: ${searchPrefix}${query}`);
 
-        const tracks = await musicService.resolve(
-          `${searchPrefix}${query}`
-        );
+        const tracks = await musicService.resolve(`${searchPrefix}${query}`);
 
         if (!tracks || tracks.length === 0) {
-          await interaction.editReply(
-            '❌ No results found.'
-          );
+          await interaction.editReply({
+            embeds: [
+              new EmbedBuilder()
+                .setColor(ManorTheme.colors.info)
+                .setDescription(
+                  `${ManorTheme.emojis.error} I have searched the archives, but alas, no such melody could be found.`
+                ),
+            ],
+          });
           return;
         }
 
-        console.log(
-          `[Music] Resolved ${tracks.length} track(s).`
-        );
+        console.log(`[Music] Resolved ${tracks.length} track(s).`);
 
         player = await musicService.joinChannel(
           interaction.guild.id,
@@ -235,10 +188,6 @@ const command: Command = {
           throw new Error('Player is disconnected.');
         }
 
-        // ========================================================
-        // Add the first resolved track to our queue.
-        // ========================================================
-
         const track = tracks[0];
 
         const musicTrack: MusicTrack = {
@@ -249,325 +198,339 @@ const command: Command = {
 
         player.queue.add(musicTrack);
 
-        console.log(
-          `[Music] Added to queue: ${track.info.title}`
-        );
-
-        // ========================================================
-        // Start playback if the player is idle.
-        // ========================================================
+        console.log(`[Music] Added to queue: ${track.info.title}`);
 
         if (player.state === PlayerState.IDLE) {
           await player.playNext();
 
-          await interaction.editReply(
-            `🎶 Added to queue: **${track.info.title}**\n*(Waiting for playback to start...)*`
-          );
+          await interaction.editReply({
+            embeds: [
+              new EmbedBuilder()
+                .setColor(ManorTheme.colors.primary)
+                .setTitle(`${ManorTheme.emojis.music} A Melody Approaches`)
+                .setDescription(
+                  `**${track.info.title}** has been added to the manor's queue.\n*(The musicians are preparing...)*`
+                ),
+            ],
+          });
         } else {
-          await interaction.editReply(
-            `🎶 Added to queue: **${track.info.title}**`
-          );
+          await interaction.editReply({
+            embeds: [
+              new EmbedBuilder()
+                .setColor(ManorTheme.colors.primary)
+                .setDescription(
+                  `${ManorTheme.emojis.queue} **${track.info.title}** has been politely added to the queue.`
+                ),
+            ],
+          });
         }
       } catch (err: any) {
-        // ========================================================
-        // TEMPORARY DEBUG ERROR HANDLING
         //
-        // We intentionally show the real error here instead of
-        // hiding it behind "YouTube is temporarily unavailable."
-        // ========================================================
-
-        console.error(
-          '================ MUSIC PLAY ERROR ================'
-        );
+        console.error('================ MUSIC PLAY ERROR ================');
 
         console.error(err);
 
-        console.error(
-          '===================================================='
-        );
+        console.error('====================================================');
 
-        const errorMessage =
-          err?.message ||
-          String(err) ||
-          'Unknown error';
+        const errorMessage = err?.message || String(err) || 'Unknown error';
 
-        await interaction.editReply(
-          `❌ Error: ${errorMessage}`
-        );
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.error)
+              .setDescription(
+                `${ManorTheme.emojis.error} A disruption occurred in the parlor: ${errorMessage}`
+              ),
+          ],
+        });
       }
 
       return;
     }
 
-    // ============================================================
-    // ALL OTHER COMMANDS REQUIRE AN ACTIVE PLAYER
-    // ============================================================
-
-    const player = musicService.getPlayer(
-      interaction.guild.id
-    );
+    const player = musicService.getPlayer(interaction.guild.id);
 
     if (!player) {
-      await interaction.editReply(
-        '❌ No music is currently playing.'
-      );
+      await interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(ManorTheme.colors.info)
+            .setDescription(
+              `${ManorTheme.emojis.error} The grand piano sits silently in the parlor. No music is currently playing.`
+            ),
+        ],
+      });
       return;
     }
-
-    // ============================================================
-    // PAUSE
-    // ============================================================
 
     switch (sub) {
       case 'pause': {
         if (player.state !== PlayerState.PLAYING) {
-          await interaction.editReply(
-            '❌ Player is not currently playing.'
-          );
+          await interaction.editReply({
+            embeds: [
+              new EmbedBuilder()
+                .setColor(ManorTheme.colors.error)
+                .setDescription(`${ManorTheme.emojis.error} The musicians are already resting.`),
+            ],
+          });
           return;
         }
 
         await player.player.setPaused(true);
-
         player.state = PlayerState.PAUSED;
 
-        await interaction.editReply(
-          '⏸️ Paused.'
-        );
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.info)
+              .setDescription(
+                `${ManorTheme.emojis.music} The melody has been paused upon your request.`
+              ),
+          ],
+        });
 
         break;
       }
 
-      // ==========================================================
-      // RESUME
-      // ==========================================================
-
       case 'resume': {
         if (player.state !== PlayerState.PAUSED) {
-          await interaction.editReply(
-            '❌ Player is not paused.'
-          );
+          await interaction.editReply({
+            embeds: [
+              new EmbedBuilder()
+                .setColor(ManorTheme.colors.error)
+                .setDescription(
+                  `${ManorTheme.emojis.error} The musicians are already playing for you.`
+                ),
+            ],
+          });
           return;
         }
 
         await player.player.setPaused(false);
-
         player.state = PlayerState.PLAYING;
 
-        await interaction.editReply(
-          '▶️ Resumed.'
-        );
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.success)
+              .setDescription(
+                `${ManorTheme.emojis.music} The musicians have resumed their performance.`
+              ),
+          ],
+        });
 
         break;
       }
-
-      // ==========================================================
-      // SKIP
-      // ==========================================================
 
       case 'skip': {
         await player.skip();
-
-        await interaction.editReply(
-          '⏭️ Skipped.'
-        );
-
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.info)
+              .setDescription(
+                `${ManorTheme.emojis.music} We shall proceed to the next composition on the list.`
+              ),
+          ],
+        });
         break;
       }
-
-      // ==========================================================
-      // STOP
-      // ==========================================================
 
       case 'stop': {
         await player.stop();
-
-        await interaction.editReply(
-          '⏹️ Stopped and cleared queue.'
-        );
-
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.info)
+              .setDescription(
+                `${ManorTheme.emojis.music} The performance has been halted, and the parchment of requests has been cleared.`
+              ),
+          ],
+        });
         break;
       }
-
-      // ==========================================================
-      // DISCONNECT
-      // ==========================================================
 
       case 'disconnect': {
         await player.destroy();
-
-        await interaction.editReply(
-          '👋 Disconnected.'
-        );
-
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.info)
+              .setDescription(
+                `${ManorTheme.emojis.gate} I shall take my leave from the parlor now. Good day to you.`
+              ),
+          ],
+        });
         break;
       }
-
-      // ==========================================================
-      // QUEUE
-      // ==========================================================
 
       case 'queue': {
         const tracks = player.queue.tracks;
 
         if (tracks.length === 0) {
-          await interaction.editReply(
-            'The queue is empty.'
-          );
+          await interaction.editReply({
+            embeds: [
+              new EmbedBuilder()
+                .setColor(ManorTheme.colors.info)
+                .setDescription(
+                  `${ManorTheme.emojis.queue} The request parchment is currently empty.`
+                ),
+            ],
+          });
           return;
         }
 
         const qList = tracks
           .slice(0, 10)
-          .map(
-            (t, i) =>
-              `${i + 1}. **${t.track.info.title}**`
-          )
+          .map((t, i) => `${i + 1}. **${t.track.info.title}**`)
           .join('\n');
 
-        await interaction.editReply(
-          `**Queue:**\n${qList}${
-            tracks.length > 10
-              ? `\n*...and ${tracks.length - 10} more*`
-              : ''
-          }`
-        );
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.primary)
+              .setTitle(`${ManorTheme.emojis.queue} The Manor's Musical Queue`)
+              .setDescription(
+                `${qList}${tracks.length > 10 ? `\n\n*...and ${tracks.length - 10} more await their turn*` : ''}`
+              ),
+          ],
+        });
 
         break;
       }
-
-      // ==========================================================
-      // NOW PLAYING
-      // ==========================================================
 
       case 'nowplaying': {
         const current = player.queue.current;
 
         if (!current) {
-          await interaction.editReply(
-            '❌ Nothing is playing.'
-          );
+          await interaction.editReply({
+            embeds: [
+              new EmbedBuilder()
+                .setColor(ManorTheme.colors.info)
+                .setDescription(
+                  `${ManorTheme.emojis.error} The grand piano is currently untouched.`
+                ),
+            ],
+          });
           return;
         }
 
-        await interaction.editReply(
-          `🎶 Now playing: **${current.track.info.title}**`
-        );
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.primary)
+              .setDescription(
+                `${ManorTheme.emojis.music} Currently filling the parlor: **${current.track.info.title}**`
+              ),
+          ],
+        });
 
         break;
       }
 
-      // ==========================================================
-      // VOLUME
-      // ==========================================================
-
       case 'volume': {
-        const vol = interaction.options.getInteger(
-          'level',
-          true
-        );
+        const vol = interaction.options.getInteger('level', true);
 
         await player.player.setGlobalVolume(vol);
 
-        await interaction.editReply(
-          `🔊 Volume set to ${vol}%.`
-        );
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.info)
+              .setDescription(`🔊 The acoustic resonance has been adjusted to ${vol}%.`),
+          ],
+        });
 
         break;
       }
-
-      // ==========================================================
-      // SEEK
-      // ==========================================================
 
       case 'seek': {
-        const secs = interaction.options.getInteger(
-          'seconds',
-          true
-        );
+        const secs = interaction.options.getInteger('seconds', true);
 
-        await player.player.seekTo(
-          secs * 1000
-        );
+        await player.player.seekTo(secs * 1000);
 
-        await interaction.editReply(
-          `⏩ Seeked to ${secs}s.`
-        );
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.info)
+              .setDescription(`⏩ The musicians have skipped ahead to the ${secs}s mark.`),
+          ],
+        });
 
         break;
       }
-
-      // ==========================================================
-      // SHUFFLE
-      // ==========================================================
 
       case 'shuffle': {
         player.queue.shuffle();
 
-        await interaction.editReply(
-          '🔀 Queue shuffled.'
-        );
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.info)
+              .setDescription(`🔀 The musical arrangement has been pleasantly shuffled.`),
+          ],
+        });
 
         break;
       }
 
-      // ==========================================================
-      // LOOP
-      // ==========================================================
-
       case 'loop': {
-        const mode = interaction.options.getString(
-          'mode',
-          true
-        ) as LoopMode;
+        const mode = interaction.options.getString('mode', true) as LoopMode;
 
         player.queue.loopMode = mode;
 
-        await interaction.editReply(
-          `🔁 Loop mode set to ${mode}.`
-        );
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.info)
+              .setDescription(`🔁 The musicians have been instructed to loop: ${mode}.`),
+          ],
+        });
 
         break;
       }
 
-      // ==========================================================
-      // REMOVE
-      // ==========================================================
-
       case 'remove': {
-        const pos = interaction.options.getInteger(
-          'position',
-          true
-        );
+        const pos = interaction.options.getInteger('position', true);
 
-        const removed = player.queue.remove(
-          pos - 1
-        );
+        const removed = player.queue.remove(pos - 1);
 
         if (removed) {
-          await interaction.editReply(
-            `🗑️ Removed **${removed.track.info.title}**.`
-          );
+          await interaction.editReply({
+            embeds: [
+              new EmbedBuilder()
+                .setColor(ManorTheme.colors.info)
+                .setDescription(
+                  `🗑️ **${removed.track.info.title}** has been gracefully removed from the parchment.`
+                ),
+            ],
+          });
         } else {
-          await interaction.editReply(
-            '❌ Invalid position.'
-          );
+          await interaction.editReply({
+            embeds: [
+              new EmbedBuilder()
+                .setColor(ManorTheme.colors.error)
+                .setDescription(
+                  `${ManorTheme.emojis.error} I could not find a request at that position.`
+                ),
+            ],
+          });
         }
 
         break;
       }
 
-      // ==========================================================
-      // CLEAR
-      // ==========================================================
-
       case 'clear': {
         player.queue.clear();
-
-        await interaction.editReply(
-          '🗑️ Queue cleared.'
-        );
-
+        await interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(ManorTheme.colors.info)
+              .setDescription(
+                `🧹 The musicians have been dismissed, and the queue has been cleared.`
+              ),
+          ],
+        });
         break;
       }
     }

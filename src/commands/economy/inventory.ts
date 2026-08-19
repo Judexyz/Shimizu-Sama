@@ -7,14 +7,15 @@ const command: Command = {
   data: new SlashCommandBuilder()
     .setName('inventory')
     .setDescription('View your owned items.')
-    .addUserOption(option => 
-      option.setName('user')
-        .setDescription('The user to check')
-        .setRequired(false)
+    .addUserOption((option) =>
+      option.setName('user').setDescription('The user to check').setRequired(false)
     ),
   execute: async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.guildId) {
-      await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        ephemeral: true,
+      });
       return;
     }
 
@@ -24,7 +25,10 @@ const command: Command = {
       const inventory = await EconomyService.getInventory(interaction.guildId, targetUser.id);
 
       if (inventory.length === 0) {
-        await interaction.reply({ content: `🎒 **${targetUser.username}**'s inventory is empty.`, ephemeral: true });
+        await interaction.reply({
+          content: `🎒 **${targetUser.username}**'s inventory is empty.`,
+          ephemeral: true,
+        });
         return;
       }
 
@@ -35,7 +39,10 @@ const command: Command = {
 
       await interaction.reply({ content: invStr });
     } catch (error) {
-      logger.error({ error, guildId: interaction.guildId, userId: interaction.user.id }, 'Error in /inventory command');
+      logger.error(
+        { error, guildId: interaction.guildId, userId: interaction.user.id },
+        'Error in /inventory command'
+      );
       await interaction.reply({ content: 'Failed to retrieve inventory.', ephemeral: true });
     }
   },

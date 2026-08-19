@@ -7,7 +7,6 @@ import { GiveawayService } from '../services/giveaway/GiveawayService.js';
 import { TicketService } from '../services/ticket/TicketService.js';
 
 async function handleRolePanelButton(interaction: ButtonInteraction) {
-  // customId is "rolepanel_menuId_roleId"
   const parts = interaction.customId.split('_');
   if (parts.length !== 3) return;
 
@@ -33,7 +32,9 @@ async function handleRolePanelButton(interaction: ButtonInteraction) {
       await interaction.followUp(`Added the **${role.name}** role.`);
     }
   } catch (err) {
-    await interaction.followUp(`❌ I don't have permission to manage this role. My role needs to be higher than the requested role.`);
+    await interaction.followUp(
+      `❌ I don't have permission to manage this role. My role needs to be higher than the requested role.`
+    );
   }
 }
 
@@ -66,9 +67,15 @@ const event: Event<Events.InteractionCreate> = {
     } catch (error) {
       logger.error({ err: error }, `Error executing ${interaction.commandName}`);
       if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+        await interaction.followUp({
+          content: 'There was an error while executing this command!',
+          ephemeral: true,
+        });
       } else {
-        await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        await interaction.reply({
+          content: 'There was an error while executing this command!',
+          ephemeral: true,
+        });
       }
     }
   },

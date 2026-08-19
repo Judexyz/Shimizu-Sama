@@ -1,4 +1,9 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, TextChannel } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  TextChannel,
+} from 'discord.js';
 import { Command } from '../types/index.js';
 import { prisma } from '../database/prisma.js';
 import { CacheService } from '../services/cacheService.js';
@@ -8,43 +13,112 @@ const command: Command = {
     .setName('config')
     .setDescription('Configure server settings.')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-    
-    // Welcome Group
-    .addSubcommandGroup(group => group.setName('welcome').setDescription('Configure welcome settings')
-      .addSubcommand(sub => sub.setName('enable').setDescription('Enable welcome messages'))
-      .addSubcommand(sub => sub.setName('disable').setDescription('Disable welcome messages'))
-      .addSubcommand(sub => sub.setName('set-channel').setDescription('Set welcome channel').addChannelOption(opt => opt.setName('channel').setDescription('The channel').setRequired(true)))
-      .addSubcommand(sub => sub.setName('set-message').setDescription('Set welcome message').addStringOption(opt => opt.setName('message').setDescription('Message text (supports variables)').setRequired(true)))
+
+    .addSubcommandGroup((group) =>
+      group
+        .setName('welcome')
+        .setDescription('Configure welcome settings')
+        .addSubcommand((sub) => sub.setName('enable').setDescription('Enable welcome messages'))
+        .addSubcommand((sub) => sub.setName('disable').setDescription('Disable welcome messages'))
+        .addSubcommand((sub) =>
+          sub
+            .setName('set-channel')
+            .setDescription('Set welcome channel')
+            .addChannelOption((opt) =>
+              opt.setName('channel').setDescription('The channel').setRequired(true)
+            )
+        )
+        .addSubcommand((sub) =>
+          sub
+            .setName('set-message')
+            .setDescription('Set welcome message')
+            .addStringOption((opt) =>
+              opt
+                .setName('message')
+                .setDescription('Message text (supports variables)')
+                .setRequired(true)
+            )
+        )
     )
 
-    // Goodbye Group
-    .addSubcommandGroup(group => group.setName('goodbye').setDescription('Configure goodbye settings')
-      .addSubcommand(sub => sub.setName('enable').setDescription('Enable goodbye messages'))
-      .addSubcommand(sub => sub.setName('disable').setDescription('Disable goodbye messages'))
-      .addSubcommand(sub => sub.setName('set-channel').setDescription('Set goodbye channel').addChannelOption(opt => opt.setName('channel').setDescription('The channel').setRequired(true)))
-      .addSubcommand(sub => sub.setName('set-message').setDescription('Set goodbye message').addStringOption(opt => opt.setName('message').setDescription('Message text (supports variables)').setRequired(true)))
+    .addSubcommandGroup((group) =>
+      group
+        .setName('goodbye')
+        .setDescription('Configure goodbye settings')
+        .addSubcommand((sub) => sub.setName('enable').setDescription('Enable goodbye messages'))
+        .addSubcommand((sub) => sub.setName('disable').setDescription('Disable goodbye messages'))
+        .addSubcommand((sub) =>
+          sub
+            .setName('set-channel')
+            .setDescription('Set goodbye channel')
+            .addChannelOption((opt) =>
+              opt.setName('channel').setDescription('The channel').setRequired(true)
+            )
+        )
+        .addSubcommand((sub) =>
+          sub
+            .setName('set-message')
+            .setDescription('Set goodbye message')
+            .addStringOption((opt) =>
+              opt
+                .setName('message')
+                .setDescription('Message text (supports variables)')
+                .setRequired(true)
+            )
+        )
     )
 
-    // Autorole Group
-    .addSubcommandGroup(group => group.setName('autorole').setDescription('Configure autoroles')
-      .addSubcommand(sub => sub.setName('add').setDescription('Add an autorole').addRoleOption(opt => opt.setName('role').setDescription('The role').setRequired(true)))
-      .addSubcommand(sub => sub.setName('remove').setDescription('Remove an autorole').addRoleOption(opt => opt.setName('role').setDescription('The role').setRequired(true)))
-      .addSubcommand(sub => sub.setName('list').setDescription('List all autoroles'))
+    .addSubcommandGroup((group) =>
+      group
+        .setName('autorole')
+        .setDescription('Configure autoroles')
+        .addSubcommand((sub) =>
+          sub
+            .setName('add')
+            .setDescription('Add an autorole')
+            .addRoleOption((opt) =>
+              opt.setName('role').setDescription('The role').setRequired(true)
+            )
+        )
+        .addSubcommand((sub) =>
+          sub
+            .setName('remove')
+            .setDescription('Remove an autorole')
+            .addRoleOption((opt) =>
+              opt.setName('role').setDescription('The role').setRequired(true)
+            )
+        )
+        .addSubcommand((sub) => sub.setName('list').setDescription('List all autoroles'))
     )
 
-    // Raid Protection Group
-    .addSubcommandGroup(group => group.setName('raid').setDescription('Configure raid protection')
-      .addSubcommand(sub => sub.setName('enable').setDescription('Enable raid protection'))
-      .addSubcommand(sub => sub.setName('disable').setDescription('Disable raid protection'))
-      .addSubcommand(sub => sub.setName('set').setDescription('Configure raid protection parameters')
-        .addIntegerOption(opt => opt.setName('threshold').setDescription('Number of joins').setRequired(true))
-        .addIntegerOption(opt => opt.setName('time_window').setDescription('Time window in seconds').setRequired(true))
-        .addStringOption(opt => opt.setName('action').setDescription('Action to take').setRequired(true).addChoices(
-           { name: 'Alert Only', value: 'ALERT' },
-           { name: 'Kick', value: 'KICK' },
-           { name: 'Ban', value: 'BAN' }
-        ))
-      )
+    .addSubcommandGroup((group) =>
+      group
+        .setName('raid')
+        .setDescription('Configure raid protection')
+        .addSubcommand((sub) => sub.setName('enable').setDescription('Enable raid protection'))
+        .addSubcommand((sub) => sub.setName('disable').setDescription('Disable raid protection'))
+        .addSubcommand((sub) =>
+          sub
+            .setName('set')
+            .setDescription('Configure raid protection parameters')
+            .addIntegerOption((opt) =>
+              opt.setName('threshold').setDescription('Number of joins').setRequired(true)
+            )
+            .addIntegerOption((opt) =>
+              opt.setName('time_window').setDescription('Time window in seconds').setRequired(true)
+            )
+            .addStringOption((opt) =>
+              opt
+                .setName('action')
+                .setDescription('Action to take')
+                .setRequired(true)
+                .addChoices(
+                  { name: 'Alert Only', value: 'ALERT' },
+                  { name: 'Kick', value: 'KICK' },
+                  { name: 'Ban', value: 'BAN' }
+                )
+            )
+        )
     ),
 
   execute: async (interaction: ChatInputCommandInteraction) => {
@@ -64,16 +138,18 @@ const command: Command = {
         const enabled = subCommand === 'enable';
         await prisma.welcomeConfig.update({
           where: { guildId },
-          data: isWelcome ? { enabled } : { enabled } // We use the same enabled toggle for now, or separate if needed
+          data: isWelcome ? { enabled } : { enabled },
         });
-        await interaction.followUp(`✅ Successfully ${enabled ? 'enabled' : 'disabled'} ${group} messages.`);
+        await interaction.followUp(
+          `✅ Successfully ${enabled ? 'enabled' : 'disabled'} ${group} messages.`
+        );
       }
 
       if (subCommand === 'set-channel') {
         const channel = interaction.options.getChannel('channel', true);
         await prisma.welcomeConfig.update({
           where: { guildId },
-          data: isWelcome ? { channelId: channel.id } : { goodbyeChannelId: channel.id }
+          data: isWelcome ? { channelId: channel.id } : { goodbyeChannelId: channel.id },
         });
         await interaction.followUp(`✅ Successfully set ${group} channel to <#${channel.id}>.`);
       }
@@ -82,7 +158,7 @@ const command: Command = {
         const msg = interaction.options.getString('message', true);
         await prisma.welcomeConfig.update({
           where: { guildId },
-          data: isWelcome ? { message: msg } : { goodbyeMessage: msg }
+          data: isWelcome ? { message: msg } : { goodbyeMessage: msg },
         });
         await interaction.followUp(`✅ Successfully set ${group} message to:\n${msg}`);
       }
@@ -116,7 +192,9 @@ const command: Command = {
         if (roles.length === 0) {
           await interaction.followUp(`No autoroles configured.`);
         } else {
-          await interaction.followUp(`**Autoroles:**\n${roles.map((r: any) => `<@&${r.roleId}>`).join('\n')}`);
+          await interaction.followUp(
+            `**Autoroles:**\n${roles.map((r: any) => `<@&${r.roleId}>`).join('\n')}`
+          );
         }
       }
     }
@@ -128,7 +206,9 @@ const command: Command = {
       if (subCommand === 'enable' || subCommand === 'disable') {
         const enabled = subCommand === 'enable';
         await prisma.raidProtection.update({ where: { guildId }, data: { enabled } });
-        await interaction.followUp(`✅ Successfully ${enabled ? 'enabled' : 'disabled'} raid protection.`);
+        await interaction.followUp(
+          `✅ Successfully ${enabled ? 'enabled' : 'disabled'} raid protection.`
+        );
       }
 
       if (subCommand === 'set') {
@@ -138,11 +218,13 @@ const command: Command = {
 
         await prisma.raidProtection.update({
           where: { guildId },
-          data: { joinThreshold: threshold, timeWindow, action }
+          data: { joinThreshold: threshold, timeWindow, action },
         });
-        await interaction.followUp(`✅ Successfully configured raid protection:\nThreshold: **${threshold}** joins\nWindow: **${timeWindow}** seconds\nAction: **${action}**`);
+        await interaction.followUp(
+          `✅ Successfully configured raid protection:\nThreshold: **${threshold}** joins\nWindow: **${timeWindow}** seconds\nAction: **${action}**`
+        );
       }
-      
+
       await CacheService.delete(`raidconfig:${guildId}`);
     }
   },

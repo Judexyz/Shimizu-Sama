@@ -30,6 +30,7 @@ model Guild {
   ticketSettings      TicketSettings?
   ticketPanels        TicketPanel[]
   tickets             Ticket[]
+  serverStats         ServerStats?
 }
 
 model GuildSettings {
@@ -323,6 +324,16 @@ model EconomyTransaction {
 
   @@index([guildId])
   @@index([userId])
+}
+
+model ServerStats {
+  id           String  @id @default(uuid())
+  guildId      String  @unique
+  guild        Guild   @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  categoryId   String?
+  allMembersId String?
+  membersId    String?
+  botsId       String?
 }
 
 model UserAchievement {

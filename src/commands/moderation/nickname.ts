@@ -5,18 +5,24 @@ import { ModerationService } from '../../services/moderationService.js';
 const command: Command = {
   data: new SlashCommandBuilder()
     .setName('nickname')
-    .setDescription('Changes a user\'s nickname.')
+    .setDescription("Changes a user's nickname.")
     .addUserOption((option) =>
       option.setName('target').setDescription('The user to nickname').setRequired(true)
     )
     .addStringOption((option) =>
-      option.setName('nickname').setDescription('The new nickname (leave empty to reset)').setRequired(false)
+      option
+        .setName('nickname')
+        .setDescription('The new nickname (leave empty to reset)')
+        .setRequired(false)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageNicknames),
 
   execute: async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.inCachedGuild()) {
-      await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        ephemeral: true,
+      });
       return;
     }
 
@@ -36,12 +42,12 @@ const command: Command = {
     try {
       const targetMember = await guild.members.fetch(targetUser.id).catch(() => null);
       if (!targetMember) {
-         await interaction.followUp(`❌ User is not in the server.`);
-         return;
+        await interaction.followUp(`❌ User is not in the server.`);
+        return;
       }
 
       await targetMember.setNickname(newNickname, `Nickname changed by ${interaction.user.tag}`);
-      
+
       if (newNickname) {
         await interaction.followUp(`✅ Successfully changed nickname to **${newNickname}**.`);
       } else {

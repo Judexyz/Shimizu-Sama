@@ -4,11 +4,17 @@ const command = {
     data: new SlashCommandBuilder()
         .setName('remove-warning')
         .setDescription('Removes a specific warning by its ID.')
-        .addStringOption((option) => option.setName('warning_id').setDescription('The ID of the warning to remove').setRequired(true))
+        .addStringOption((option) => option
+        .setName('warning_id')
+        .setDescription('The ID of the warning to remove')
+        .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
     execute: async (interaction) => {
         if (!interaction.inCachedGuild()) {
-            await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+            await interaction.reply({
+                content: 'This command can only be used in a server.',
+                ephemeral: true,
+            });
             return;
         }
         const warningId = interaction.options.getString('warning_id', true);

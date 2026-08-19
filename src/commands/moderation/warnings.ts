@@ -1,4 +1,9 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  EmbedBuilder,
+} from 'discord.js';
 import { Command } from '../../types/index.js';
 import { prisma } from '../../database/prisma.js';
 
@@ -13,7 +18,10 @@ const command: Command = {
 
   execute: async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.inCachedGuild()) {
-      await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        ephemeral: true,
+      });
       return;
     }
 
@@ -36,7 +44,6 @@ const command: Command = {
         .setColor(0xffff00)
         .setDescription(`Total Warnings: **${warnings.length}**`);
 
-      // Discord limits fields to 25. We take the last 20 for safety.
       const displayWarnings = warnings.slice(0, 20);
       displayWarnings.forEach((w) => {
         embed.addFields({

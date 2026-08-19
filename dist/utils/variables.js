@@ -1,7 +1,4 @@
 export class VariableParser {
-    /**
-     * Replaces variables like {user}, {username}, {server}, etc. in a string.
-     */
     static parse(text, context) {
         let result = text;
         if (context.user) {

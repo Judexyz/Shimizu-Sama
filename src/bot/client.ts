@@ -26,8 +26,7 @@ export class ShimizuClient extends Client {
   private createShoukaku(): Shoukaku {
     const host = process.env.LAVALINK_HOST || '127.0.0.1';
     const port = process.env.LAVALINK_PORT || '2333';
-    const password =
-      process.env.LAVALINK_PASSWORD || 'youshallnotpass';
+    const password = process.env.LAVALINK_PASSWORD || 'youshallnotpass';
 
     const secure = process.env.LAVALINK_SECURE === 'true';
 
@@ -50,20 +49,13 @@ export class ShimizuClient extends Client {
       'Initializing Shoukaku...'
     );
 
-    const shoukaku = new Shoukaku(
-      new Connectors.DiscordJS(this),
-      nodes,
-      {
-        moveOnDisconnect: false,
-        resume: false,
-        reconnectTries: 10,
-        restTimeout: 10000,
-      }
-    );
+    const shoukaku = new Shoukaku(new Connectors.DiscordJS(this), nodes, {
+      moveOnDisconnect: false,
+      resume: false,
+      reconnectTries: 10,
+      restTimeout: 10000,
+    });
 
-    /*
-     * Lavalink node successfully connected.
-     */
     shoukaku.on('ready', (name) => {
       logger.info(
         {
@@ -74,9 +66,6 @@ export class ShimizuClient extends Client {
       );
     });
 
-    /*
-     * Node error.
-     */
     shoukaku.on('error', (name, error) => {
       logger.error(
         {
@@ -87,9 +76,6 @@ export class ShimizuClient extends Client {
       );
     });
 
-    /*
-     * Lavalink WebSocket closed.
-     */
     shoukaku.on('close', (name, code, reason) => {
       logger.warn(
         {
@@ -102,9 +88,6 @@ export class ShimizuClient extends Client {
       );
     });
 
-    /*
-     * Shoukaku disconnected from Lavalink.
-     */
     shoukaku.on('disconnect', (name, count) => {
       logger.warn(
         {
@@ -116,11 +99,6 @@ export class ShimizuClient extends Client {
       );
     });
 
-    /*
-     * Debug logging.
-     *
-     * This is useful while fixing the Lavalink connection.
-     */
     shoukaku.on('debug', (name, info) => {
       logger.debug(
         {
@@ -138,14 +116,6 @@ export class ShimizuClient extends Client {
     try {
       logger.info('Starting Shimizu-sama...');
 
-      /*
-       * IMPORTANT:
-       *
-       * Shoukaku is created BEFORE Discord login.
-       *
-       * DiscordJS connector waits for Discord READY,
-       * then establishes the Lavalink connection.
-       */
       await this.login(token);
 
       logger.info(

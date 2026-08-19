@@ -3,7 +3,6 @@ import { logger } from '../utils/logger.js';
 import { GiveawayService } from '../services/giveaway/GiveawayService.js';
 import { TicketService } from '../services/ticket/TicketService.js';
 async function handleRolePanelButton(interaction) {
-    // customId is "rolepanel_menuId_roleId"
     const parts = interaction.customId.split('_');
     if (parts.length !== 3)
         return;
@@ -60,10 +59,16 @@ const event = {
         catch (error) {
             logger.error({ err: error }, `Error executing ${interaction.commandName}`);
             if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+                await interaction.followUp({
+                    content: 'There was an error while executing this command!',
+                    ephemeral: true,
+                });
             }
             else {
-                await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+                await interaction.reply({
+                    content: 'There was an error while executing this command!',
+                    ephemeral: true,
+                });
             }
         }
     },

@@ -1,16 +1,11 @@
 import { prisma } from '../../database/prisma.js';
 export class EconomyService {
-    /**
-     * Ensure user guild profile exists and return it.
-     */
     static async getProfile(guildId, userId) {
-        // Upsert Guild to prevent foreign key constraint failures
         await prisma.guild.upsert({
             where: { id: guildId },
             update: {},
             create: { id: guildId },
         });
-        // Upsert User to prevent foreign key constraint failures
         await prisma.user.upsert({
             where: { id: userId },
             update: {},
@@ -29,15 +24,12 @@ export class EconomyService {
     static async addBalance(guildId, userId, amount, type) {
         if (amount <= 0)
             throw new Error('Amount must be positive');
-        // Use a transaction to ensure balance and history update atomically
         const result = await prisma.$transaction(async (tx) => {
-            // Upsert Guild
             await tx.guild.upsert({
                 where: { id: guildId },
                 update: {},
                 create: { id: guildId },
             });
-            // Upsert User
             await tx.user.upsert({
                 where: { id: userId },
                 update: {},
@@ -100,13 +92,11 @@ export class EconomyService {
             if (!senderProfile || senderProfile.balance < amount) {
                 throw new Error('Insufficient funds');
             }
-            // Ensure recipient exists
             await tx.user.upsert({
                 where: { id: toUserId },
                 update: {},
                 create: { id: toUserId },
             });
-            // Deduct sender
             const updatedSender = await tx.userGuildProfile.update({
                 where: { guildId_userId: { guildId, userId: fromUserId } },
                 data: {
@@ -114,7 +104,6 @@ export class EconomyService {
                     paymentsSent: { increment: 1 },
                 },
             });
-            // Add recipient
             const updatedRecipient = await tx.userGuildProfile.upsert({
                 where: { guildId_userId: { guildId, userId: toUserId } },
                 update: {
@@ -128,7 +117,6 @@ export class EconomyService {
                     paymentsReceived: 1,
                 },
             });
-            // Log both
             await tx.economyTransaction.createMany({
                 data: [
                     {
@@ -152,13 +140,11 @@ export class EconomyService {
     }
     static async claimDaily(guildId, userId) {
         return await prisma.$transaction(async (tx) => {
-            // Upsert Guild
             await tx.guild.upsert({
                 where: { id: guildId },
                 update: {},
                 create: { id: guildId },
             });
-            // Upsert User
             await tx.user.upsert({
                 where: { id: userId },
                 update: {},
@@ -177,7 +163,7 @@ export class EconomyService {
                     throw new Error(`On cooldown. Remaining ms: ${remainingMs}`);
                 }
             }
-            const reward = Math.floor(Math.random() * (250 - 100 + 1)) + 100; // 100-250
+            const reward = Math.floor(Math.random() * (250 - 100 + 1)) + 100;
             const updatedProfile = await tx.userGuildProfile.update({
                 where: { guildId_userId: { guildId, userId } },
                 data: {
@@ -201,13 +187,11 @@ export class EconomyService {
     }
     static async work(guildId, userId) {
         return await prisma.$transaction(async (tx) => {
-            // Upsert Guild
             await tx.guild.upsert({
                 where: { id: guildId },
                 update: {},
                 create: { id: guildId },
             });
-            // Upsert User
             await tx.user.upsert({
                 where: { id: userId },
                 update: {},
@@ -226,7 +210,7 @@ export class EconomyService {
                     throw new Error(`On cooldown. Remaining ms: ${remainingMs}`);
                 }
             }
-            const reward = Math.floor(Math.random() * (150 - 50 + 1)) + 50; // 50-150
+            const reward = Math.floor(Math.random() * (150 - 50 + 1)) + 50;
             const updatedProfile = await tx.userGuildProfile.update({
                 where: { guildId_userId: { guildId, userId } },
                 data: {
@@ -263,7 +247,6 @@ export class EconomyService {
             if (!profile || profile.balance < item.price) {
                 throw new Error('Insufficient funds');
             }
-            // Check if user already owns it (prevent duplicate inventory rows)
             const existingInventory = await tx.inventoryItem.findUnique({
                 where: {
                     profileId_itemId: {

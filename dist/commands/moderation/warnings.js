@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, } from 'discord.js';
 import { prisma } from '../../database/prisma.js';
 const command = {
     data: new SlashCommandBuilder()
@@ -8,7 +8,10 @@ const command = {
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
     execute: async (interaction) => {
         if (!interaction.inCachedGuild()) {
-            await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+            await interaction.reply({
+                content: 'This command can only be used in a server.',
+                ephemeral: true,
+            });
             return;
         }
         const targetUser = interaction.options.getUser('target', true);
@@ -26,7 +29,6 @@ const command = {
                 .setTitle(`Warnings for ${targetUser.tag}`)
                 .setColor(0xffff00)
                 .setDescription(`Total Warnings: **${warnings.length}**`);
-            // Discord limits fields to 25. We take the last 20 for safety.
             const displayWarnings = warnings.slice(0, 20);
             displayWarnings.forEach((w) => {
                 embed.addFields({

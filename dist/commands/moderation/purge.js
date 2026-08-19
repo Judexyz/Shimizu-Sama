@@ -1,14 +1,27 @@
-import { SlashCommandBuilder, PermissionFlagsBits, TextChannel } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, TextChannel, } from 'discord.js';
 const command = {
     data: new SlashCommandBuilder()
         .setName('purge')
         .setDescription('Deletes a number of recent messages in the channel.')
-        .addIntegerOption((option) => option.setName('amount').setDescription('Number of messages to delete (1-100)').setRequired(true).setMinValue(1).setMaxValue(100))
-        .addUserOption((option) => option.setName('target').setDescription('Only delete messages from this user').setRequired(false))
+        .addIntegerOption((option) => option
+        .setName('amount')
+        .setDescription('Number of messages to delete (1-100)')
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(100))
+        .addUserOption((option) => option
+        .setName('target')
+        .setDescription('Only delete messages from this user')
+        .setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
     execute: async (interaction) => {
-        if (!interaction.inCachedGuild() || !interaction.channel || !(interaction.channel instanceof TextChannel)) {
-            await interaction.reply({ content: 'This command can only be used in a text channel.', ephemeral: true });
+        if (!interaction.inCachedGuild() ||
+            !interaction.channel ||
+            !(interaction.channel instanceof TextChannel)) {
+            await interaction.reply({
+                content: 'This command can only be used in a text channel.',
+                ephemeral: true,
+            });
             return;
         }
         const amount = interaction.options.getInteger('amount', true);
@@ -23,7 +36,7 @@ const command = {
                 await interaction.followUp(`No messages found to delete.`);
                 return;
             }
-            await interaction.channel.bulkDelete(messages, true); // true = filter out messages older than 14 days
+            await interaction.channel.bulkDelete(messages, true);
             await interaction.followUp(`✅ Successfully deleted **${messages.size}** messages.`);
         }
         catch {

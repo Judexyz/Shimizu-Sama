@@ -15,7 +15,9 @@ export const loadCommands = async (client) => {
         const itemPath = path.join(commandsPath, item);
         const stat = fs.statSync(itemPath);
         if (stat.isDirectory()) {
-            const commandFiles = fs.readdirSync(itemPath).filter((file) => file.endsWith('.ts') || file.endsWith('.js'));
+            const commandFiles = fs
+                .readdirSync(itemPath)
+                .filter((file) => file.endsWith('.ts') || file.endsWith('.js'));
             for (const file of commandFiles) {
                 const filePath = path.join(itemPath, file);
                 await loadFile(filePath, client);

@@ -12,11 +12,7 @@ export enum LogType {
 }
 
 export class LoggingService {
-  static async logAction(
-    guild: Guild,
-    type: LogType,
-    embed: EmbedBuilder
-  ): Promise<void> {
+  static async logAction(guild: Guild, type: LogType, embed: EmbedBuilder): Promise<void> {
     try {
       const config = await prisma.logConfig.findUnique({
         where: { guildId: guild.id },

@@ -1,26 +1,28 @@
-import { 
-  ActionRowBuilder, 
-  ButtonBuilder, 
-  ButtonStyle, 
-  ChannelType, 
-  EmbedBuilder, 
-  Guild, 
-  GuildMember, 
-  Message, 
-  TextChannel, 
-  User, 
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ChannelType,
+  EmbedBuilder,
+  Guild,
+  GuildMember,
+  Message,
+  TextChannel,
+  User,
   PermissionFlagsBits,
   ButtonInteraction,
-  AttachmentBuilder
+  AttachmentBuilder,
 } from 'discord.js';
 import { prisma } from '../../database/prisma.js';
 import { logger } from '../../utils/logger.js';
 
 export class TicketService {
-  /**
-   * Spawn a new ticket panel in the given channel.
-   */
-  public static async createPanel(guildId: string, channel: TextChannel, title: string = 'Need Support?', description: string = 'To create a ticket use the Create ticket button') {
+  public static async createPanel(
+    guildId: string,
+    channel: TextChannel,
+    title: string = 'Need Support?',
+    description: string = 'To create a ticket use the Create ticket button'
+  ) {
     const embed = new EmbedBuilder()
       .setTitle(title)
       .setDescription(description)
@@ -49,9 +51,6 @@ export class TicketService {
     return message;
   }
 
-  /**
-   * Generates a simple HTML transcript of a text channel.
-   */
   private static async generateTranscript(channel: TextChannel): Promise<Buffer> {
     const messages = await channel.messages.fetch({ limit: 100 });
     const sortedMessages = Array.from(messages.values()).reverse();
@@ -79,8 +78,10 @@ export class TicketService {
 
     for (const msg of sortedMessages) {
       if (msg.author.bot) continue;
-      
-      const avatarUrl = msg.author.displayAvatarURL({ extension: 'png', size: 64 }) || 'https://cdn.discordapp.com/embed/avatars/0.png';
+
+      const avatarUrl =
+        msg.author.displayAvatarURL({ extension: 'png', size: 64 }) ||
+        'https://cdn.discordapp.com/embed/avatars/0.png';
       const time = msg.createdAt.toLocaleString();
       const content = msg.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -102,9 +103,6 @@ export class TicketService {
     return Buffer.from(html, 'utf-8');
   }
 
-  /**
-   * Closes a ticket, generates transcript, and deletes the channel.
-   */
   public static async closeTicket(interaction: ButtonInteraction | any, channel: TextChannel) {
     await interaction.reply({ content: 'Closing ticket in 5 seconds...', ephemeral: false });
 
@@ -119,16 +117,19 @@ export class TicketService {
           data: { status: 'CLOSED', closedAt: new Date() },
         });
 
-        // Generate transcript
         const transcriptBuffer = await this.generateTranscript(channel);
-        const attachment = new AttachmentBuilder(transcriptBuffer, { name: `transcript-${channel.name}.html` });
+        const attachment = new AttachmentBuilder(transcriptBuffer, {
+          name: `transcript-${channel.name}.html`,
+        });
 
         const settings = await prisma.ticketSettings.findUnique({
           where: { guildId: channel.guild.id },
         });
 
         if (settings?.transcriptChannelId) {
-          const logChannel = channel.guild.channels.cache.get(settings.transcriptChannelId) as TextChannel;
+          const logChannel = channel.guild.channels.cache.get(
+            settings.transcriptChannelId
+          ) as TextChannel;
           if (logChannel) {
             await logChannel.send({
               content: `Transcript for ticket \`${channel.name}\` closed by ${interaction.user.username}`,
@@ -150,20 +151,19 @@ export class TicketService {
     }
   }
 
-  /**
-   * Opens a new ticket for a user.
-   */
   public static async openTicket(interaction: ButtonInteraction) {
     const guild = interaction.guild!;
     const member = interaction.member as GuildMember;
 
-    // Check if user already has an open ticket
     const existingTicket = await prisma.ticket.findFirst({
       where: { guildId: guild.id, creatorId: member.id, status: 'OPEN' },
     });
 
     if (existingTicket) {
-      return interaction.reply({ content: `You already have an open ticket: <#${existingTicket.channelId}>`, ephemeral: true });
+      return interaction.reply({
+        content: `You already have an open ticket: <#${existingTicket.channelId}>`,
+        ephemeral: true,
+      });
     }
 
     const settings = await prisma.ticketSettings.findUnique({
@@ -181,18 +181,18 @@ export class TicketService {
         {
           id: interaction.client.user.id,
           allow: [
-            PermissionFlagsBits.ViewChannel, 
-            PermissionFlagsBits.SendMessages, 
-            PermissionFlagsBits.ReadMessageHistory, 
-            PermissionFlagsBits.ManageChannels
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.ManageChannels,
           ],
         },
         {
           id: member.id,
           allow: [
-            PermissionFlagsBits.ViewChannel, 
-            PermissionFlagsBits.SendMessages, 
-            PermissionFlagsBits.ReadMessageHistory
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory,
           ],
         },
       ];
@@ -200,7 +200,11 @@ export class TicketService {
       if (settings?.supportRoleId) {
         permissionOverwrites.push({
           id: settings.supportRoleId,
-          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory,
+          ],
         });
       }
 
@@ -221,7 +225,9 @@ export class TicketService {
 
       const embed = new EmbedBuilder()
         .setTitle('Ticket Support')
-        .setDescription('Support will be with you shortly.\nTo close this ticket, press the button below.')
+        .setDescription(
+          'Support will be with you shortly.\nTo close this ticket, press the button below.'
+        )
         .setColor('#2F3136');
 
       const closeBtn = new ButtonBuilder()
@@ -232,19 +238,24 @@ export class TicketService {
 
       const row = new ActionRowBuilder<ButtonBuilder>().addComponents(closeBtn);
 
-      const pingMsg = settings?.supportRoleId ? `<@&${settings.supportRoleId}> <@${member.id}>` : `<@${member.id}>`;
+      const pingMsg = settings?.supportRoleId
+        ? `<@&${settings.supportRoleId}> <@${member.id}>`
+        : `<@${member.id}>`;
       await ticketChannel.send({ content: pingMsg, embeds: [embed], components: [row] });
 
-      await interaction.followUp({ content: `Ticket created: <#${ticketChannel.id}>`, ephemeral: true });
+      await interaction.followUp({
+        content: `Ticket created: <#${ticketChannel.id}>`,
+        ephemeral: true,
+      });
     } catch (error) {
       logger.error({ error, guildId: guild.id }, 'Failed to open ticket');
-      await interaction.followUp({ content: 'Failed to create your ticket. Please contact an admin.', ephemeral: true });
+      await interaction.followUp({
+        content: 'Failed to create your ticket. Please contact an admin.',
+        ephemeral: true,
+      });
     }
   }
 
-  /**
-   * Handle button interactions for tickets.
-   */
   public static async handleInteraction(interaction: ButtonInteraction) {
     if (interaction.customId === 'ticket_create') {
       await this.openTicket(interaction);
@@ -253,14 +264,17 @@ export class TicketService {
         .setCustomId('ticket_close_confirm')
         .setLabel('Confirm Close')
         .setStyle(ButtonStyle.Danger);
-      
+
       const cancelBtn = new ButtonBuilder()
         .setCustomId('ticket_close_cancel')
         .setLabel('Cancel')
         .setStyle(ButtonStyle.Secondary);
 
       const row = new ActionRowBuilder<ButtonBuilder>().addComponents(confirmBtn, cancelBtn);
-      await interaction.reply({ content: 'Are you sure you want to close this ticket?', components: [row] });
+      await interaction.reply({
+        content: 'Are you sure you want to close this ticket?',
+        components: [row],
+      });
     } else if (interaction.customId === 'ticket_close_confirm') {
       await this.closeTicket(interaction, interaction.channel as TextChannel);
     } else if (interaction.customId === 'ticket_close_cancel') {

@@ -16,9 +16,6 @@ export class MusicService {
     return this.players.get(guildId);
   }
 
-  /**
-   * Wait until at least one Lavalink node is connected.
-   */
   private async waitForNode(timeoutMs = 15000): Promise<any> {
     if (!this.client.shoukaku) {
       throw new Error('Shoukaku is not initialized.');
@@ -37,12 +34,10 @@ export class MusicService {
         }
       }
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
-    throw new Error(
-      'No Lavalink nodes available after waiting 15 seconds.'
-    );
+    throw new Error('No Lavalink nodes available after waiting 15 seconds.');
   }
 
   public async joinChannel(
@@ -62,18 +57,13 @@ export class MusicService {
 
     await this.waitForNode();
 
-    const shoukakuPlayer =
-      await this.client.shoukaku.joinVoiceChannel({
-        guildId,
-        channelId,
-        shardId,
-      });
-
-    player = new GuildMusicPlayer(
+    const shoukakuPlayer = await this.client.shoukaku.joinVoiceChannel({
       guildId,
-      shoukakuPlayer,
-      this
-    );
+      channelId,
+      shardId,
+    });
+
+    player = new GuildMusicPlayer(guildId, shoukakuPlayer, this);
 
     this.players.set(guildId, player);
 
@@ -100,10 +90,7 @@ export class MusicService {
     }
   }
 
-  public async resolve(
-    query: string,
-    maxRetries = 3
-  ): Promise<Track[]> {
+  public async resolve(query: string, maxRetries = 3): Promise<Track[]> {
     if (!this.client.shoukaku) {
       throw new Error('Shoukaku is not initialized.');
     }
@@ -156,9 +143,7 @@ export class MusicService {
         if (res.loadType === 'error') {
           const err = res.data as any;
 
-          throw new Error(
-            `Lavalink load failed: ${err?.message || 'Unknown Lavalink error'}`
-          );
+          throw new Error(`Lavalink load failed: ${err?.message || 'Unknown Lavalink error'}`);
         }
 
         if (res.loadType === 'track') {
@@ -175,35 +160,25 @@ export class MusicService {
 
         return [];
       } catch (error: any) {
-        lastError =
-          error instanceof Error
-            ? error
-            : new Error(String(error));
+        lastError = error instanceof Error ? error : new Error(String(error));
 
         logger.warn(
           {
             query,
             attempt,
             error: lastError.message,
-            connectedNodes: [
-              ...this.client.shoukaku.nodes.keys(),
-            ],
+            connectedNodes: [...this.client.shoukaku.nodes.keys()],
           },
           'Lavalink track resolution failed'
         );
 
         if (attempt < maxRetries) {
-          await new Promise(resolve =>
-            setTimeout(resolve, 2000)
-          );
+          await new Promise((resolve) => setTimeout(resolve, 2000));
         }
       }
     }
 
-    throw (
-      lastError ||
-      new Error('Failed to resolve track after retries')
-    );
+    throw lastError || new Error('Failed to resolve track after retries');
   }
 }
 

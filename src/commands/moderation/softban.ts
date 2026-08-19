@@ -17,7 +17,10 @@ const command: Command = {
 
   execute: async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.inCachedGuild()) {
-      await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        ephemeral: true,
+      });
       return;
     }
 
@@ -35,12 +38,18 @@ const command: Command = {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      await guild.members.ban(targetUser, { reason, deleteMessageSeconds: 604800 }); // 7 days
+      await guild.members.ban(targetUser, { reason, deleteMessageSeconds: 604800 });
       await guild.bans.remove(targetUser.id, `Softban release: ${reason}`);
 
       await ModerationService.logCase(guild.id, targetUser.id, moderator.id, 'Softban', reason);
 
-      const embed = LoggingService.buildModerationEmbed('Softban', targetUser, moderator.user, reason, 0xff8c00);
+      const embed = LoggingService.buildModerationEmbed(
+        'Softban',
+        targetUser,
+        moderator.user,
+        reason,
+        0xff8c00
+      );
       await LoggingService.logAction(guild, LogType.MODERATION, embed);
 
       await interaction.followUp(`✅ Successfully softbanned **${targetUser.tag}**.`);

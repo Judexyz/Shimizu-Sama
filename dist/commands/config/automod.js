@@ -9,22 +9,37 @@ const command = {
         .addSubcommand((subcommand) => subcommand
         .setName('enable')
         .setDescription('Enable a specific AutoMod rule')
-        .addStringOption(option => option.setName('rule').setDescription('The rule to enable').setRequired(true)
+        .addStringOption((option) => option
+        .setName('rule')
+        .setDescription('The rule to enable')
+        .setRequired(true)
         .addChoices({ name: 'Spam', value: 'Spam' }, { name: 'Links', value: 'Links' }, { name: 'BadWords', value: 'BadWords' }, { name: 'Caps', value: 'Caps' })))
         .addSubcommand((subcommand) => subcommand
         .setName('disable')
         .setDescription('Disable a specific AutoMod rule')
-        .addStringOption(option => option.setName('rule').setDescription('The rule to disable').setRequired(true)
+        .addStringOption((option) => option
+        .setName('rule')
+        .setDescription('The rule to disable')
+        .setRequired(true)
         .addChoices({ name: 'Spam', value: 'Spam' }, { name: 'Links', value: 'Links' }, { name: 'BadWords', value: 'BadWords' }, { name: 'Caps', value: 'Caps' })))
         .addSubcommand((subcommand) => subcommand
         .setName('set')
         .setDescription('Configure threshold and action for a rule')
-        .addStringOption(option => option.setName('rule').setDescription('The rule to configure').setRequired(true).addChoices({ name: 'Spam', value: 'Spam' }, { name: 'Links', value: 'Links' }, { name: 'BadWords', value: 'BadWords' }, { name: 'Caps', value: 'Caps' }))
-        .addStringOption(option => option.setName('action').setDescription('Action to take').setRequired(true).addChoices({ name: 'Log Only', value: 'LOG' }, { name: 'Delete Message', value: 'DELETE' }, { name: 'Warn User', value: 'WARN' }, { name: 'Timeout User', value: 'TIMEOUT' }, { name: 'Kick User', value: 'KICK' }, { name: 'Ban User', value: 'BAN' }))
-        .addIntegerOption(option => option.setName('threshold').setDescription('Numeric threshold if applicable (e.g., 5 messages for Spam)').setRequired(false)))
-        .addSubcommand((subcommand) => subcommand
-        .setName('rules')
-        .setDescription('List all configured AutoMod rules')),
+        .addStringOption((option) => option
+        .setName('rule')
+        .setDescription('The rule to configure')
+        .setRequired(true)
+        .addChoices({ name: 'Spam', value: 'Spam' }, { name: 'Links', value: 'Links' }, { name: 'BadWords', value: 'BadWords' }, { name: 'Caps', value: 'Caps' }))
+        .addStringOption((option) => option
+        .setName('action')
+        .setDescription('Action to take')
+        .setRequired(true)
+        .addChoices({ name: 'Log Only', value: 'LOG' }, { name: 'Delete Message', value: 'DELETE' }, { name: 'Warn User', value: 'WARN' }, { name: 'Timeout User', value: 'TIMEOUT' }, { name: 'Kick User', value: 'KICK' }, { name: 'Ban User', value: 'BAN' }))
+        .addIntegerOption((option) => option
+        .setName('threshold')
+        .setDescription('Numeric threshold if applicable (e.g., 5 messages for Spam)')
+        .setRequired(false)))
+        .addSubcommand((subcommand) => subcommand.setName('rules').setDescription('List all configured AutoMod rules')),
     execute: async (interaction) => {
         if (!interaction.inCachedGuild())
             return;
@@ -37,7 +52,9 @@ const command = {
                 await interaction.followUp('No AutoMod rules are configured.');
                 return;
             }
-            const text = rules.map((r) => `**${r.type}**: ${r.enabled ? '🟢 Enabled' : '🔴 Disabled'} | Action: ${r.action} | Threshold: ${r.threshold}`).join('\n');
+            const text = rules
+                .map((r) => `**${r.type}**: ${r.enabled ? '🟢 Enabled' : '🔴 Disabled'} | Action: ${r.action} | Threshold: ${r.threshold}`)
+                .join('\n');
             await interaction.followUp(`**AutoMod Rules:**\n${text}`);
             return;
         }
@@ -50,7 +67,9 @@ const command = {
                 await prisma.autoModRule.update({ where: { id: rule.id }, data: { enabled } });
             }
             else {
-                await prisma.autoModRule.create({ data: { guildId, type: ruleType, enabled, action: 'LOG' } });
+                await prisma.autoModRule.create({
+                    data: { guildId, type: ruleType, enabled, action: 'LOG' },
+                });
             }
             await CacheService.delete(cacheKey);
             await interaction.followUp(`✅ Successfully ${enabled ? 'enabled' : 'disabled'} **${ruleType}** AutoMod rule.`);
@@ -63,7 +82,9 @@ const command = {
                 await prisma.autoModRule.update({ where: { id: rule.id }, data: { action, threshold } });
             }
             else {
-                await prisma.autoModRule.create({ data: { guildId, type: ruleType, enabled: true, action, threshold } });
+                await prisma.autoModRule.create({
+                    data: { guildId, type: ruleType, enabled: true, action, threshold },
+                });
             }
             await CacheService.delete(cacheKey);
             await interaction.followUp(`✅ Successfully configured **${ruleType}** to perform action **${action}** with threshold **${threshold}**.`);

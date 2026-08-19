@@ -5,11 +5,10 @@ export interface Achievement {
   name: string;
   description: string;
   type: AchievementType;
-  threshold: number; // For progress calculation
+  threshold: number;
 }
 
 export const achievementsRegistry: Achievement[] = [
-  // Messaging
   {
     key: 'first_message',
     name: 'First Steps',
@@ -32,7 +31,6 @@ export const achievementsRegistry: Achievement[] = [
     threshold: 1000,
   },
 
-  // Leveling
   {
     key: 'level_5',
     name: 'Rising Star',
@@ -55,7 +53,6 @@ export const achievementsRegistry: Achievement[] = [
     threshold: 25,
   },
 
-  // Economy
   {
     key: 'first_daily',
     name: 'Daily Grind',

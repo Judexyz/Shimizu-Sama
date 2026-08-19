@@ -7,7 +7,10 @@ const command = {
         .setDescription('View the items available in the shop.'),
     execute: async (interaction) => {
         if (!interaction.guildId) {
-            await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+            await interaction.reply({
+                content: 'This command can only be used in a server.',
+                ephemeral: true,
+            });
             return;
         }
         try {

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, } from 'discord.js';
 import { prisma } from '../database/prisma.js';
 import { CacheService } from '../services/cacheService.js';
 const command = {
@@ -9,15 +9,22 @@ const command = {
         .addSubcommand((subcommand) => subcommand
         .setName('add')
         .setDescription('Add a new custom command')
-        .addStringOption(option => option.setName('trigger').setDescription('The exact text to trigger the command').setRequired(true))
-        .addStringOption(option => option.setName('response').setDescription('The response text (supports {user}, {server}, etc.)').setRequired(true)))
+        .addStringOption((option) => option
+        .setName('trigger')
+        .setDescription('The exact text to trigger the command')
+        .setRequired(true))
+        .addStringOption((option) => option
+        .setName('response')
+        .setDescription('The response text (supports {user}, {server}, etc.)')
+        .setRequired(true)))
         .addSubcommand((subcommand) => subcommand
         .setName('remove')
         .setDescription('Remove a custom command')
-        .addStringOption(option => option.setName('trigger').setDescription('The trigger of the command to remove').setRequired(true)))
-        .addSubcommand((subcommand) => subcommand
-        .setName('list')
-        .setDescription('List all custom commands')),
+        .addStringOption((option) => option
+        .setName('trigger')
+        .setDescription('The trigger of the command to remove')
+        .setRequired(true)))
+        .addSubcommand((subcommand) => subcommand.setName('list').setDescription('List all custom commands')),
     execute: async (interaction) => {
         if (!interaction.inCachedGuild())
             return;
