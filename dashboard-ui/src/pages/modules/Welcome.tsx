@@ -12,6 +12,7 @@ export default function Welcome() {
     goodbyeChannelId: '',
     goodbyeMessage: ''
   });
+  const [autoroles, setAutoroles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,6 +31,10 @@ export default function Welcome() {
           goodbyeMessage: res.data.goodbyeMessage || ''
         });
       }
+      
+      const roleRes = await axios.get(`/api/guilds/${guildId}/autoroles`);
+      setAutoroles(roleRes.data || []);
+      
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -41,7 +46,8 @@ export default function Welcome() {
     e.preventDefault();
     try {
       await axios.post(`/api/guilds/${guildId}/welcome`, config);
-      alert('Welcome settings saved successfully!');
+      await axios.post(`/api/guilds/${guildId}/autoroles`, { roleIds: autoroles });
+      alert('Settings saved successfully!');
     } catch (err) {
       console.error(err);
       alert('Failed to save settings.');
@@ -136,6 +142,29 @@ export default function Welcome() {
           </div>
         </div>
 
+      </div>
+
+      <div className="glass-panel" style={{ marginTop: '30px', opacity: config.enabled ? 1 : 0.5, pointerEvents: config.enabled ? 'auto' : 'none' }}>
+        <h2 style={{ marginBottom: '20px' }}>Automatic Roles (Autorole)</h2>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '15px', fontSize: '0.9rem' }}>
+          Select roles to automatically give to members the moment they join your server.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px', maxHeight: '300px', overflowY: 'auto', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+          {data.roles.filter((role: any) => role.name !== '@everyone' && !role.managed).map((role: any) => (
+            <label key={role.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '5px' }}>
+              <input 
+                type="checkbox" 
+                checked={autoroles.includes(role.id)}
+                onChange={(e) => {
+                  if (e.target.checked) setAutoroles([...autoroles, role.id]);
+                  else setAutoroles(autoroles.filter(id => id !== role.id));
+                }}
+                style={{ width: '18px', height: '18px' }}
+              />
+              <span style={{ color: role.hexColor !== '#000000' ? role.hexColor : '#fff', fontWeight: 500 }}>{role.name}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
       <button 

@@ -353,6 +353,32 @@ export const startDashboardServer = (client: ShimizuClient) => {
     }
   });
 
+  // Get Autoroles
+  app.get('/api/guilds/:id/autoroles', requireAuth, async (req: any, res) => {
+    try {
+      const autoroles = await prisma.autorole.findMany({ where: { guildId: req.params.id } });
+      res.json(autoroles.map((ar: any) => ar.roleId));
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch autoroles' });
+    }
+  });
+
+  // Update Autoroles
+  app.post('/api/guilds/:id/autoroles', requireAuth, async (req: any, res) => {
+    const guildId = req.params.id;
+    const { roleIds } = req.body;
+    try {
+      await prisma.$transaction([
+        prisma.autorole.deleteMany({ where: { guildId } }),
+        ...roleIds.map((roleId: string) => prisma.autorole.create({ data: { guildId, roleId } }))
+      ]);
+      res.json({ success: true });
+    } catch (error) {
+      logger.error({ error }, 'Autorole update failed');
+      res.status(500).json({ error: 'Failed to update autoroles' });
+    }
+  });
+
   // Get Role Menus
   app.get('/api/guilds/:id/role-menus', requireAuth, async (req: any, res) => {
     const guildId = req.params.id;
